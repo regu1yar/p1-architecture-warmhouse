@@ -9,21 +9,49 @@ title Container diagram for Warmhouse smart home system
 
 Person(user, "User", "Warmhouse user")
 
-System_Ext(sensor, "Sensor", "Sensor for some kind of measurement in the house")
-System_Ext(device, "Device", "Smart home device to be controlled")
+System_Ext(sensor_partner, "Partner Sensor", "Proprietary sensor for some kind of measurement in the house")
+System_Ext(device_partner, "Partner Device", "Smart home device to be controlled via proprietary protocol")
 
+System_Ext(sensor_native, "Native Sensor", "Natively supported sensor for some kind of measurement in the house")
+System_Ext(device_native, "Native Device", "Smart home device to be controlled via open-source protocol")
+
+System_Ext(partner_mobile_app, "Partner Mobile App", "Partner's Mobile App")
 System_Ext(partner_api, "Partner API", "Third-party API for partner devices and sensors")
 
 Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
     Container(warmhouse_user_web_app, "Web Application", "Delivers the static content and the Warmhouse SPA for UI")
     Container(warmhouse_spa, "Single-Page App", "Provides Warmhouse functionality to users via their web browser")
     Container(warmhouse_mobile_app, "Mobile App", "Provides Warmhouse functionality to user via their mobile device")
+
     Container(warmhouse_device_control_backend_api, "Device Control API", "Provides API for controlling devices")
     Container(warmhouse_scenarios_backend_api, "Scenarios API", "Provides API for managing and inferring scenarios")
-    Container(warmhouse_monitoring_backend_api, "Monitoring API", "Provides API for monitoring sensors data")
+
+    Container(warmhouse_monitoring_service, "Monitoring Service", "Processes incoming sensors measurements")
     Container(warmhouse_sensors_storage_backend_api, "Sensors Storage API", "Provides API for storing and retrieving sensors data")
+    ContainerDb(warmhouse_sensors_data_db, "Sensors Data DB", "Stores sensors data")
+
     Container(warmhouse_authorization_backend_api, "Authorization API", "Provides API for authorizing and registering users")
     Container(warmhouse_device_management_backend_api, "Device Management API", "Provides API for connecting devices and managing their meta info")
+
+    ContainerDb(warmhouse_users_info_db, "Users Info DB", "Stores users' info: accounts, devices lists, scenarios, etc.")
 }
+
+Rel(user, partner_mobile_app, "Uses")
+Rel(user, warmhouse_user_web_app, "Uses", "HTTPS")
+Rel(user, warmhouse_spa, "Uses", "HTTPS")
+Rel(user, warmhouse_mobile_app, "Uses")
+
+Rel(sensor_partner, partner_api, "Sends data to", "HTTPS")
+Rel(device_partner, partner_api, "Sends state updates", "WebSocket")
+
+Rel(sensor_native, warmhouse_monitoring_service, "Sends data to", "HTTPS")
+Rel(device_native, warmhouse_device_control_backend_api, "Sends state updates", "WebSocket")
+
+Rel(partner_mobile_app, sensor_partner, "Shares auth key with", "Bluetooth")
+Rel(partner_mobile_app, device_partner, "Gets device info", "Bluetooth")
+Rel(partner_mobile_app, partner_api, "Uses for auth, controlling devices, etc.", "WebSocket")
+
+Rel(partner_api, warmhouse_monitoring_service, "Sends devices state updates / sensors data", "HTTPS")
+Rel(partner_api, warmhouse_device_management_backend_api, "Reports devices list changes", "HTTPS")
 
 @enduml
