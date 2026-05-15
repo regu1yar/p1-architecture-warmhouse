@@ -19,10 +19,13 @@ System_Ext(partner_mobile_app, "Partner Mobile App", "Partner's Mobile App")
 System_Ext(partner_api, "Partner API", "Third-party API for partner devices and sensors")
 
 Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
-    Container(warmhouse_user_web_app, "Web Application", "Delivers the static content and the Warmhouse SPA for UI")
+    Container(warmhouse_web_app, "Web Application", "Delivers the static content and the Warmhouse SPA for UI")
     Container(warmhouse_spa, "Single-Page App", "Provides Warmhouse functionality to users via their web browser")
     Container(warmhouse_mobile_app, "Mobile App", "Provides Warmhouse functionality to user via their mobile device")
 
+    ' TODO: add relations with warmhouse_connections_*
+    Container(warmhouse_connections_dispatcher_service, "Connections Dispatcher Service", "Service for registering and resolving hosts holding connections with devices")
+    Container(warmhouse_connections_service, "Connections Service", "Service for holding connections with devices")
     Container(warmhouse_device_control_backend_api, "Device Control API", "Provides API for controlling devices")
     Container(warmhouse_scenarios_backend_api, "Scenarios API", "Provides API for managing and inferring scenarios")
 
@@ -37,7 +40,7 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
 }
 
 Rel(user, partner_mobile_app, "Uses")
-Rel(user, warmhouse_user_web_app, "Uses", "HTTPS")
+Rel(user, warmhouse_web_app, "Uses", "HTTPS")
 Rel(user, warmhouse_spa, "Uses", "HTTPS")
 Rel(user, warmhouse_mobile_app, "Uses")
 
@@ -53,5 +56,23 @@ Rel(partner_mobile_app, partner_api, "Uses for auth, controlling devices, etc.",
 
 Rel(partner_api, warmhouse_monitoring_service, "Sends devices state updates / sensors data", "HTTPS")
 Rel(partner_api, warmhouse_device_management_backend_api, "Reports devices list changes", "HTTPS")
+
+Rel_Neighbor(warmhouse_web_app, warmhouse_spa, "Delivers")
+
+Rel(warmhouse_spa, warmhouse_device_control_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_spa, warmhouse_scenarios_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_spa, warmhouse_sensors_storage_backend_api, "Uses", "Long Polling, JSON/HTTPS")
+Rel(warmhouse_spa, warmhouse_authorization_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_spa, warmhouse_device_management_backend_api, "Uses", "sync, JSON/HTTPS")
+
+Rel(warmhouse_mobile_app, warmhouse_device_control_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_mobile_app, warmhouse_scenarios_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_mobile_app, warmhouse_sensors_storage_backend_api, "Uses", "Long Polling, JSON/HTTPS")
+Rel(warmhouse_mobile_app, warmhouse_authorization_backend_api, "Uses", "sync, JSON/HTTPS")
+Rel(warmhouse_mobile_app, warmhouse_device_management_backend_api, "Uses", "sync, JSON/HTTPS")
+
+Rel(warmhouse_device_control_backend_api, warmhouse_connections_dispatcher_service, "Resolves proxy host for target device via", "sync, JSON/HTTPS")
+Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives to device via", "sync, JSON/HTTPS")
+Rel(warmhouse_device_control_backend_api, partner_api, "Sends directives for partner devices", "sync, JSON/HTTPS")
 
 @enduml
