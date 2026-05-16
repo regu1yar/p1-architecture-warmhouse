@@ -9,11 +9,8 @@ title Container diagram for Warmhouse smart home system
 
 Person(user, "User", "Warmhouse user")
 
-System_Ext(sensor_partner, "Partner Sensor", "Proprietary sensor for some kind of measurement in the house")
-System_Ext(device_partner, "Partner Device", "Smart home device to be controlled via proprietary protocol")
-
-System_Ext(sensor_native, "Native Sensor", "Natively supported sensor for some kind of measurement in the house")
-System_Ext(device_native, "Native Device", "Smart home device to be controlled via open-source protocol")
+System_Ext(device_partner, "Partner Device", "Smart home device with proprietary protocol")
+System_Ext(device_native, "Native Device", "Smart home device with open-source protocol")
 
 System_Ext(partner_mobile_app, "Partner Mobile App", "Partner's Mobile App")
 System_Ext(partner_api, "Partner API", "Third-party API for partner devices and sensors")
@@ -23,9 +20,9 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
     Container(warmhouse_spa, "Single-Page App", "Provides Warmhouse functionality to users via their web browser")
     Container(warmhouse_mobile_app, "Mobile App", "Provides Warmhouse functionality to user via their mobile device")
 
-    ' TODO: add relations with warmhouse_connections_*
-    Container(warmhouse_connections_dispatcher_service, "Connections Dispatcher Service", "Service for registering and resolving hosts holding connections with devices")
-    Container(warmhouse_connections_service, "Connections Service", "Service for holding connections with devices")
+    Container(warmhouse_proxy_service, "Proxy", "Service for balancing device connections across endpoint set")
+    Container(warmhouse_connections_service, "Connections Service", "Service for 2-way interaction with devices")
+
     Container(warmhouse_device_control_backend_api, "Device Control API", "Provides API for controlling devices")
     Container(warmhouse_scenarios_backend_api, "Scenarios API", "Provides API for managing and inferring scenarios")
 
@@ -44,13 +41,10 @@ Rel(user, warmhouse_web_app, "Uses", "HTTPS")
 Rel(user, warmhouse_spa, "Uses", "HTTPS")
 Rel(user, warmhouse_mobile_app, "Uses")
 
-Rel(sensor_partner, partner_api, "Sends data to", "HTTPS")
-Rel(device_partner, partner_api, "Sends state updates", "WebSocket")
+Rel(device_partner, partner_api, "Sends state updates", "WebSocket / HTTPS")
 
-Rel(sensor_native, warmhouse_monitoring_service, "Sends data to", "HTTPS")
-Rel(device_native, warmhouse_device_control_backend_api, "Sends state updates", "WebSocket")
+Rel(device_native, warmhouse_proxy_service, "Connects to backend via / sends state updates to", "WebSocket")
 
-Rel(partner_mobile_app, sensor_partner, "Shares auth key with", "Bluetooth")
 Rel(partner_mobile_app, device_partner, "Gets device info", "Bluetooth")
 Rel(partner_mobile_app, partner_api, "Uses for auth, controlling devices, etc.", "WebSocket")
 
@@ -65,13 +59,20 @@ Rel(warmhouse_spa, warmhouse_sensors_storage_backend_api, "Uses", "Long Polling,
 Rel(warmhouse_spa, warmhouse_authorization_backend_api, "Uses", "sync, JSON/HTTPS")
 Rel(warmhouse_spa, warmhouse_device_management_backend_api, "Uses", "sync, JSON/HTTPS")
 
+Rel(warmhouse_mobile_app, device_native, "Shares auth token with / gets device info", "Bluetooth")
 Rel(warmhouse_mobile_app, warmhouse_device_control_backend_api, "Uses", "sync, JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_scenarios_backend_api, "Uses", "sync, JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_sensors_storage_backend_api, "Uses", "Long Polling, JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_authorization_backend_api, "Uses", "sync, JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_device_management_backend_api, "Uses", "sync, JSON/HTTPS")
 
-Rel(warmhouse_device_control_backend_api, warmhouse_connections_dispatcher_service, "Resolves proxy host for target device via", "sync, JSON/HTTPS")
+Rel(warmhouse_proxy_service, device_native, "Passes directives to", "WebSocket")
+Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes devices state updates to", "WebSocket")
+
+Rel(warmhouse_connections_service, warmhouse_proxy_service, "Sends heartbeats / sends directives to devices via", "HTTP / WebSocket")
+Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends devices states updates to", "JSON/HTTPS")
+
+Rel(warmhouse_device_control_backend_api, warmhouse_proxy_service, "Resolves proxy host for target device via", "sync, JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives to device via", "sync, JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, partner_api, "Sends directives for partner devices", "sync, JSON/HTTPS")
 
