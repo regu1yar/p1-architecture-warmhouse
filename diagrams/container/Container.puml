@@ -70,10 +70,26 @@ Rel(warmhouse_proxy_service, device_native, "Passes directives to", "WebSocket")
 Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes devices state updates to", "WebSocket")
 
 Rel(warmhouse_connections_service, warmhouse_proxy_service, "Sends heartbeats / sends directives to devices via", "HTTP / WebSocket")
-Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends devices states updates to", "JSON/HTTPS")
+Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends devices states updates to", "async, JSON/HTTPS")
 
 Rel(warmhouse_device_control_backend_api, warmhouse_proxy_service, "Resolves proxy host for target device via", "sync, JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives to device via", "sync, JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, partner_api, "Sends directives for partner devices", "sync, JSON/HTTPS")
+
+Rel(warmhouse_scenarios_backend_api, warmhouse_device_control_backend_api, "Sends directives to devices via", "sync, JSON/HTTPS")
+Rel(warmhouse_scenarios_backend_api, warmhouse_monitoring_service, "Subscribes to devices states updates via", "sync, JSON/HTTPS")
+Rel(warmhouse_scenarios_backend_api, warmhouse_users_info_db, "Stores scenarios pipelines description to", "sync, HTTPS")
+
+Rel_Back(warmhouse_monitoring_service, warmhouse_scenarios_backend_api, "Notifies about devices updates", "async, JSON/HTTPS")
+Rel_Back(warmhouse_monitoring_service, warmhouse_sensors_storage_backend_api, "Notiifies about devices updates", "async, JSON/HTTPS")
+
+Rel_Back(warmhouse_sensors_storage_backend_api, warmhouse_spa, "Updates device states on", "Long Polling, JSON/HTTPS")
+Rel_Back(warmhouse_sensors_storage_backend_api, warmhouse_mobile_app, "Updates device states on", "Long Polling, JSON/HTTPS")
+Rel(warmhouse_sensors_storage_backend_api, warmhouse_sensors_data_db, "Stores sensors data to", "sync, JSON/HTTPS")
+
+Rel(warmhouse_authorization_backend_api, partner_api, "Synchronizes users info with", "sync, JSON/HTTPS")
+Rel(warmhouse_authorization_backend_api, warmhouse_users_info_db, "Stores users info to", "sync, JSON/HTTPS")
+
+Rel(warmhouse_device_management_backend_api, warmhouse_users_info_db, "Stores devices info to", "sync, JSON/HTTPS")
 
 @enduml
