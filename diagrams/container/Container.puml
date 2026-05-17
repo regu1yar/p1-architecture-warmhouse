@@ -5,7 +5,7 @@
 
 LAYOUT_WITH_LEGEND()
 
-title Container diagram for Warmhouse smart home system
+title Container diagram for Warmhouse smart home system (Improved)
 
 Person(user, "User", "Warmhouse user")
 
@@ -24,11 +24,14 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
         Container(warmhouse_mobile_app, "Mobile App", "Provides Warmhouse functionality to user via their mobile device")
     }
     
-    ' Device Communication Group
+    ' Device Communication Group (horizontally scalable)
     Container_Boundary(device_comms_boundary, "Device Communication") {
-        Container(warmhouse_proxy_service, "Proxy", "Service for balancing device connections across endpoint set")
-        Container(warmhouse_connections_service, "Connections Service", "Service for 2-way interaction with devices")
+        Container(warmhouse_proxy_service, "Proxy", "Service for balancing device connections across connections_service instances")
+        Container(warmhouse_connections_service, "Connections Service", "Service for 2-way interaction with devices (horizontally scalable)")
     }
+    
+    ' Partner Integration
+    Container(partner_gateway, "Partner Gateway", "Unified API for all partner integrations")
     
     ' Core Backend APIs Group
     Container_Boundary(backend_apis_boundary, "Core Backend APIs") {
@@ -38,11 +41,17 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
         Container(warmhouse_device_management_backend_api, "Device Management API", "Provides API for connecting devices and managing their meta info")
     }
     
+    ' Real-time Communication
+    Container(warmhouse_realtime_service, "Realtime Service", "Delivers real-time device state updates via Server-Sent Events")
+    
     ' Data Processing & Storage Group
     Container_Boundary(data_boundary, "Data Processing & Storage") {
-        Container(warmhouse_monitoring_service, "Monitoring Service", "Processes incoming sensors measurements")
-        Container(warmhouse_sensors_storage_backend_api, "Sensors Storage API", "Provides API for storing and retrieving sensors data")
-        ContainerDb(warmhouse_sensors_data_db, "Sensors Data DB", "Stores sensors data")
+        Container(warmhouse_monitoring_service, "Monitoring Service", "Processes incoming sensors measurements and manages device state subscriptions")
+        ContainerDb(device_subscriptions_db, "Device Subscriptions DB", "Stores subscriptions for device state updates")
+        
+        Container(warmhouse_sensors_storage_backend_api, "Sensors Storage API", "Provides API for storing and retrieving historical sensors data")
+        ContainerDb(warmhouse_sensors_data_db, "Sensors Data DB", "Stores historical sensors data")
+        
         ContainerDb(warmhouse_users_info_db, "Users Info DB", "Stores users' info: accounts, devices lists, scenarios, etc.")
     }
 }
@@ -60,36 +69,49 @@ Rel(device_native, warmhouse_proxy_service, "Connects to / sends updates", "WebS
 Rel(partner_mobile_app, device_partner, "Gets device info", "Bluetooth")
 Rel(partner_mobile_app, partner_api, "Uses for auth and control", "WebSocket")
 
-Rel(partner_api, warmhouse_monitoring_service, "Sends devices state updates", "HTTPS")
-Rel(partner_api, warmhouse_device_management_backend_api, "Reports devices list changes", "HTTPS")
+' Partner integration through gateway
+Rel(partner_api, partner_gateway, "Integrates through", "HTTPS")
+Rel(partner_gateway, warmhouse_monitoring_service, "Sends devices state updates", "HTTPS")
+Rel(partner_gateway, warmhouse_device_management_backend_api, "Reports devices list changes", "HTTPS")
 
+' Internal relationships
+' Frontend internal
 Rel(warmhouse_web_app, warmhouse_spa, "Delivers", "Static content")
 
-' Frontend to Backend APIs
+' Frontend to Backend APIs (historical data)
 Rel(warmhouse_spa, warmhouse_device_control_backend_api, "Controls devices via", "JSON/HTTPS")
 Rel(warmhouse_spa, warmhouse_scenarios_backend_api, "Manages scenarios via", "JSON/HTTPS")
-Rel(warmhouse_spa, warmhouse_sensors_storage_backend_api, "Gets sensor data via", "Long Polling, JSON/HTTPS")
+Rel(warmhouse_spa, warmhouse_sensors_storage_backend_api, "Gets historical sensor data via", "JSON/HTTPS")
 Rel(warmhouse_spa, warmhouse_authorization_backend_api, "Authenticates via", "JSON/HTTPS")
 Rel(warmhouse_spa, warmhouse_device_management_backend_api, "Manages devices via", "JSON/HTTPS")
+
+' Frontend real-time updates (SSE)
+' Clients establish SSE connection to realtime_service
+Rel(warmhouse_spa, warmhouse_realtime_service, "Establishes SSE connection for real-time updates", "Server-Sent Events")
+Rel(warmhouse_mobile_app, warmhouse_realtime_service, "Establishes SSE connection for real-time updates", "Server-Sent Events")
 
 Rel(warmhouse_mobile_app, device_native, "Shares auth token / gets info", "Bluetooth")
 Rel(warmhouse_mobile_app, warmhouse_device_control_backend_api, "Controls devices via", "JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_scenarios_backend_api, "Manages scenarios via", "JSON/HTTPS")
-Rel(warmhouse_mobile_app, warmhouse_sensors_storage_backend_api, "Gets sensor data via", "Long Polling, JSON/HTTPS")
+Rel(warmhouse_mobile_app, warmhouse_sensors_storage_backend_api, "Gets historical sensor data via", "JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_authorization_backend_api, "Authenticates via", "JSON/HTTPS")
 Rel(warmhouse_mobile_app, warmhouse_device_management_backend_api, "Manages devices via", "JSON/HTTPS")
 
 ' Device communication internal
 Rel(warmhouse_proxy_service, device_native, "Passes directives to", "WebSocket")
-Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes device updates to", "WebSocket")
+Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes device updates to / balances across", "WebSocket")
 
 BiRel(warmhouse_connections_service, warmhouse_proxy_service, "Heartbeats / directives", "HTTP / WebSocket")
 Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends device state updates", "async, JSON/HTTPS")
 
+' Real-time service integration
+Rel(warmhouse_monitoring_service, warmhouse_realtime_service, "Publishes device state updates", "async, message queue")
+Rel(warmhouse_monitoring_service, device_subscriptions_db, "Manages subscriptions in", "sync, JSON/HTTPS")
+
 ' Backend APIs internal
 Rel(warmhouse_device_control_backend_api, warmhouse_proxy_service, "Resolves proxy host via", "JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives via", "JSON/HTTPS")
-Rel(warmhouse_device_control_backend_api, partner_api, "Sends directives for partner devices", "JSON/HTTPS")
+Rel(warmhouse_device_control_backend_api, partner_gateway, "Sends directives for partner devices", "JSON/HTTPS")
 
 Rel(warmhouse_scenarios_backend_api, warmhouse_device_control_backend_api, "Sends directives via", "JSON/HTTPS")
 Rel(warmhouse_scenarios_backend_api, warmhouse_monitoring_service, "Subscribes to updates via", "JSON/HTTPS")
@@ -97,18 +119,19 @@ Rel(warmhouse_scenarios_backend_api, warmhouse_users_info_db, "Stores scenarios 
 
 ' Data processing internal
 Rel(warmhouse_monitoring_service, warmhouse_scenarios_backend_api, "Notifies about updates", "async, JSON/HTTPS")
-Rel(warmhouse_monitoring_service, warmhouse_sensors_storage_backend_api, "Sends sensor data to", "async, JSON/HTTPS")
+Rel(warmhouse_monitoring_service, warmhouse_sensors_storage_backend_api, "Sends historical sensor data to", "async, JSON/HTTPS")
 
-Rel(warmhouse_sensors_storage_backend_api, warmhouse_spa, "Pushes updates to", "Long Polling, JSON/HTTPS")
-Rel(warmhouse_sensors_storage_backend_api, warmhouse_mobile_app, "Pushes updates to", "Long Polling, JSON/HTTPS")
-Rel(warmhouse_sensors_storage_backend_api, warmhouse_sensors_data_db, "Stores data to", "JSON/HTTPS")
+Rel(warmhouse_sensors_storage_backend_api, warmhouse_sensors_data_db, "Stores historical data to", "JSON/HTTPS")
 
-Rel(warmhouse_authorization_backend_api, partner_api, "Synchronizes user info with", "JSON/HTTPS")
+Rel(warmhouse_authorization_backend_api, partner_gateway, "Synchronizes user info with", "JSON/HTTPS")
 Rel(warmhouse_authorization_backend_api, warmhouse_users_info_db, "Stores user info to", "JSON/HTTPS")
 
 Rel(warmhouse_device_management_backend_api, warmhouse_users_info_db, "Stores device info to", "JSON/HTTPS")
 
+' Add layout hints for better visualization
 Lay_D(warmhouse_web_app, warmhouse_spa)
 Lay_R(warmhouse_spa, warmhouse_mobile_app)
+Lay_D(partner_gateway, warmhouse_monitoring_service)
+Lay_R(warmhouse_monitoring_service, warmhouse_realtime_service)
 
 @enduml
