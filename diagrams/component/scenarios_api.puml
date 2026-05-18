@@ -1,0 +1,34 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Scenarios API
+
+Container(spa, "Single Page Application", "javascript and angular", "Allows user to create, change and manually infer scenarios.")
+ContainerDb(users_info_db, "Users Info DB", "Relational Database Schema", "Stores users' info: accounts, devices lists, scenarios, etc.")
+Container(device_control_backend_api, "Device Control API", "Provides API for controlling devices")
+Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+
+Container_Boundary(scenarios_api, "Scenarios API") {
+    Component(management_controller, "Management Controller", "Go Rest Handles", "Allows user to create, delete and customize scenarios.")
+    Component(monitoring_component, "Monitoring Component", "Kafka Consumer", "Monitors device state updates")
+    Component(execution_controller, "Execution Controller", "Go Rest Handles", "Allows user and system to infer scenarios and control their execution.")
+    Component(execution_component, "Execution Component", "Go gRPC Service", "Manages scenarios execution.")
+
+    Rel(management_controller, users_info_db, "Reads & writes to")
+    Rel(monitoring_component, monitoring_service, "Subscribes to updates via")
+    Rel(monitoring_component, users_info_db, "Examines trigger conditions")
+    Rel(monitoring_component, execution_controller, "Uses", "JSON/HTTPS")
+    Rel(execution_controller, execution_component, "Uses", "gRPC/HTTPS")
+    Rel(execution_component, device_control_backend_api, "Uses", "JSON/HTTPS")
+}
+
+Rel(spa, management_controller, "Uses", "JSON/HTTPS")
+Rel(spa, execution_controller, "Uses", "JSON/HTTPS")
+
+Rel(monitoring_service, monitoring_component, "Sends updates to")
+
+@enduml

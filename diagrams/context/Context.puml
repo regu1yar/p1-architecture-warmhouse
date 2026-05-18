@@ -1,4 +1,4 @@
-@startuml "enterprise"
+@startuml "Context"
 ' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 !include ../common/C4_Context.puml
 
