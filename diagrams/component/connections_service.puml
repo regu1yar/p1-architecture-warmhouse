@@ -1,0 +1,32 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Connections Service
+
+Container(proxy_service, "Proxy Service", "Service for balancing device connections")
+Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+Container(device_control_api, "Device Control API", "Provides API for controlling devices")
+
+Container_Boundary(connections_service, "Connections Service") {
+    Component(device_communication_controller, "Device Communication Controller", "Go WebSocket Handler", "Handles device messages and WebSocket connections")
+    Component(command_dispatcher, "Command Dispatcher", "Go Service", "Dispatches commands to devices via proxy")
+    Component(state_update_receiver, "State Update Receiver", "Go Handler", "Receives and processes device state updates")
+    Component(connection_registry, "Connection Registry", "In-memory Database", "Tracks device-connection mapping and session state")
+
+    Rel(device_communication_controller, connection_registry, "Updates connection state in", "Internal API")
+    Rel(command_dispatcher, connection_registry, "Queries device connection from", "Internal API")
+    Rel(state_update_receiver, connection_registry, "Validates device connection in", "Internal API")
+    Rel(state_update_receiver, monitoring_service, "Sends device state updates to", "async, JSON/HTTPS")
+    Rel(command_dispatcher, proxy_service, "Sends directives via", "WebSocket")
+    Rel(device_communication_controller, proxy_service, "Receives device updates from", "WebSocket")
+}
+
+Rel(proxy_service, device_communication_controller, "Forwards device updates to", "WebSocket")
+Rel(device_control_api, command_dispatcher, "Sends device commands to", "JSON/HTTPS")
+Rel(device_communication_controller, state_update_receiver, "Passes device updates to", "Internal message queue")
+
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Device Control API
+
+Container(spa, "Single Page Application", "javascript and angular", "Allows user to control devices via web interface")
+Container(proxy_service, "Proxy Service", "Service for balancing device connections")
+Container(connections_service, "Connections Service", "Service for 2-way interaction with devices")
+Container(scenarios_api, "Scenarios API", "Provides API for managing and inferring scenarios")
+
+Container_Boundary(device_control_api, "Device Control API") {
+    Component(command_controller, "Command Controller", "Go REST API", "Handles device control requests from users and scenarios")
+    Component(device_registry, "Device Registry", "Go Service", "Validates device ownership and permissions")
+    Component(proxy_resolver_client, "Proxy Resolver Client", "HTTP Client", "Resolves proxy service for target device")
+    Component(command_validator, "Command Validator", "Go Library", "Validates command parameters and safety constraints")
+
+    Rel(command_controller, device_registry, "Validates device access via", "Internal API")
+    Rel(command_controller, command_validator, "Validates command via", "Internal API")
+    Rel(command_controller, proxy_resolver_client, "Resolves proxy via", "Internal API")
+    Rel(proxy_resolver_client, proxy_service, "Queries proxy host from", "JSON/HTTPS")
+    Rel(command_controller, connections_service, "Sends directives via", "JSON/HTTPS")
+}
+
+Rel(spa, command_controller, "Controls devices via", "JSON/HTTPS")
+Rel(scenarios_api, command_controller, "Sends directives via", "JSON/HTTPS")
+
+@enduml

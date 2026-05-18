@@ -27,7 +27,6 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
     ContainerDb(warmhouse_users_info_db, "Users Info DB", "Stores users' info: accounts, devices lists, scenarios, etc.")
 
     Container(warmhouse_monitoring_service, "Monitoring Service", "Processes incoming device state updates")
-    ContainerDb(device_subscriptions_db, "Device Subscriptions DB", "Stores subscriptions for device state updates")
     
     Container(warmhouse_device_state_storage_backend_api, "Device State Storage API", "Provides API for storing and retrieving device states")
     ContainerDb(warmhouse_device_state_db, "Device State DB", "Stores device states")
@@ -59,8 +58,6 @@ Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes device updat
 
 BiRel(warmhouse_connections_service, warmhouse_proxy_service, "Heartbeats / directives", "HTTP / WebSocket")
 Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends device state updates", "async, JSON/HTTPS")
-
-Rel(warmhouse_monitoring_service, device_subscriptions_db, "Manages subscriptions in", "sync, JSON/HTTPS")
 
 Rel(warmhouse_device_control_backend_api, warmhouse_proxy_service, "Resolves proxy host via", "JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives via", "JSON/HTTPS")

@@ -1,0 +1,30 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Realtime Service
+
+Container(spa, "Single Page Application", "javascript and angular", "Establishes SSE connection for real-time updates")
+Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+
+Container_Boundary(realtime_service, "Realtime Service") {
+    Component(sse_connection_manager, "SSE Connection Manager", "Go SSE Server", "Manages Server-Sent Events connections with clients")
+    Component(update_broadcaster, "Update Broadcaster", "Go Service", "Broadcasts device state updates to connected clients")
+    Component(subscription_handler, "Subscription Handler", "Go Service", "Handles client subscriptions to device updates")
+    Component(connection_heartbeat, "Connection Heartbeat", "Go Routine", "Maintains connection health and detects disconnections")
+
+    Rel(sse_connection_manager, subscription_handler, "Registers client subscriptions via", "Internal API")
+    Rel(update_broadcaster, sse_connection_manager, "Sends updates to clients via", "Internal API")
+    Rel(subscription_handler, update_broadcaster, "Configures broadcast rules for", "Internal API")
+    Rel(connection_heartbeat, sse_connection_manager, "Monitors connections via", "Internal API")
+    Rel(sse_connection_manager, connection_heartbeat, "Provides connection status to", "Internal API")
+}
+
+Rel(spa, sse_connection_manager, "Establishes SSE connection for real-time updates", "Server-Sent Events")
+Rel(monitoring_service, update_broadcaster, "Sends device state updates to", "sync/async, JSON/HTTPS")
+Rel(subscription_handler, monitoring_service, "Subscribes to updates via", "sync/async, JSON/HTTPS")
+
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Authorization API
+
+Container(spa, "Single Page Application", "javascript and angular", "Authenticates users via web interface")
+ContainerDb(users_info_db, "Users Info DB", "Relational Database Schema", "Stores users' info: accounts, devices lists, scenarios, etc.")
+
+Container_Boundary(authorization_api, "Authorization API") {
+    Component(authentication_controller, "Authentication Controller", "Go REST API", "Handles user login, registration, and session management")
+    Component(token_service, "Token Service", "JWT Library", "Issues and validates JWT tokens for authenticated sessions")
+    Component(user_store_adapter, "User Store Adapter", "Database Client", "Manages user data in Users Info DB")
+    Component(oauth_integration, "OAuth Integration", "OAuth2 Client", "Handles third-party authentication providers")
+
+    Rel(authentication_controller, token_service, "Requests tokens from", "Internal API")
+    Rel(authentication_controller, user_store_adapter, "Reads/writes user data via", "Internal API")
+    Rel(authentication_controller, oauth_integration, "Delegates auth to", "Internal API")
+    Rel(user_store_adapter, users_info_db, "Stores user info to", "JSON/HTTPS")
+    Rel(oauth_integration, user_store_adapter, "Creates/updates user via", "Internal API")
+}
+
+Rel(spa, authentication_controller, "Authenticates via", "JSON/HTTPS")
+
+@enduml

@@ -1,0 +1,29 @@
+@startuml
+' !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' uncomment the following line and comment the first to use locally
+!include ./C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Proxy Service
+
+Container(device, "Device", "Smart home device", "Connects via WebSocket to send updates and receive directives")
+Container(connections_service, "Connections Service", "Service for 2-way interaction with devices")
+
+Container_Boundary(proxy_service, "Proxy Service") {
+    Component(load_balancer, "Load Balancer", "Go WebSocket Server", "Distributes device connections across multiple instances")
+    Component(connection_manager, "Connection Manager", "Go Service", "Tracks active device connections and their status")
+    Component(heartbeat_monitor, "Heartbeat Monitor", "Go Routine", "Monitors connection health and detects failures")
+    Component(proxy_resolver, "Proxy Resolver", "Go Library", "Resolves target connection service for device routing")
+
+    Rel(load_balancer, connection_manager, "Registers connections in", "Internal API")
+    Rel(connection_manager, heartbeat_monitor, "Provides health data to", "Internal API")
+    Rel(heartbeat_monitor, connection_manager, "Reports failures to", "Internal API")
+    Rel(proxy_resolver, connection_manager, "Queries connection info from", "Internal API")
+}
+
+Rel(device, load_balancer, "Connects to", "WebSocket")
+Rel(load_balancer, connections_service, "Forwards device updates to", "WebSocket")
+Rel(connections_service, load_balancer, "Sends directives via", "WebSocket")
+
+@enduml
