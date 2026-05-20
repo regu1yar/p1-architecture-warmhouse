@@ -9,7 +9,7 @@ title Container diagram for Warmhouse smart home system (Improved)
 
 Person(user, "User", "Warmhouse user")
 
-System_Ext(device, "Device", "Smart home device with open-source protocol")
+Container_Ext(device, "Device", "Smart home device with open-source protocol")
 
 Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
     Container(warmhouse_mobile_app, "Mobile App", "Provides Warmhouse functionality to user via their mobile device")

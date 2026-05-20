@@ -12,21 +12,20 @@ ContainerDb(device_state_db, "Device State DB", "Time-series Database", "Stores 
 Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
 
 Container_Boundary(device_state_storage_api, "Device State Storage API") {
-    Component(state_storage_controller, "State Storage Controller", "Go REST API", "Handles device state storage and retrieval requests")
-    Component(historical_data_manager, "Historical Data Manager", "Go Service", "Manages time-series data in Device State DB")
+    Component(state_storage_controller, "State Storage Controller", "Go REST API", "Handles device state retrieval requests from SPA")
+    Component(state_writer_service, "State Writer Service", "Go Service", "Subscribes to monitoring service and writes device state updates to database")
     Component(state_query_engine, "State Query Engine", "Database Client", "Queries historical states with filters and aggregations")
-    Component(cache_layer, "Cache Layer", "Redis Client", "Caches recent device states for performance")
+    Component(cache_layer, "Cache Layer", "Redis Client", "Caches recent device states for read performance")
 
-    Rel(state_storage_controller, historical_data_manager, "Stores/retrieves data via", "Internal API")
-    Rel(historical_data_manager, device_state_db, "Stores historical data to", "JSON/HTTPS")
-    Rel(state_storage_controller, state_query_engine, "Queries data via", "Internal API")
+    Rel(state_storage_controller, state_query_engine, "Queries historical data via", "Internal API")
+    Rel(state_storage_controller, cache_layer, "Reads/writes cache via", "Internal API")
+    Rel(state_writer_service, device_state_db, "Writes state updates to", "JSON/HTTPS")
     Rel(state_query_engine, device_state_db, "Queries historical data from", "JSON/HTTPS")
-    Rel(state_storage_controller, cache_layer, "Caches/retrieves recent states via", "Internal API")
-    Rel(cache_layer, historical_data_manager, "Warms cache from", "Internal API")
+    Rel(cache_layer, state_query_engine, "Warms cache from", "Internal API")
 }
 
 Rel(spa, state_storage_controller, "Gets last device states via", "JSON/HTTPS")
-Rel(monitoring_service, state_storage_controller, "Sends device state updates to", "sync/async, JSON/HTTPS")
-Rel(state_storage_controller, monitoring_service, "Subscribes to updates via", "sync/async, JSON/HTTPS")
+Rel(state_writer_service, monitoring_service, "Subscribes to updates via", "sync, JSON/HTTPS")
+Rel(monitoring_service, state_writer_service, "Sends device state updates to", "async, JSON/HTTPS")
 
 @enduml

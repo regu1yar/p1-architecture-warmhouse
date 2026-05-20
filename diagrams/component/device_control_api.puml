@@ -14,11 +14,9 @@ Container(scenarios_api, "Scenarios API", "Provides API for managing and inferri
 
 Container_Boundary(device_control_api, "Device Control API") {
     Component(command_controller, "Command Controller", "Go REST API", "Handles device control requests from users and scenarios")
-    Component(device_registry, "Device Registry", "Go Service", "Validates device ownership and permissions")
     Component(proxy_resolver_client, "Proxy Resolver Client", "HTTP Client", "Resolves proxy service for target device")
     Component(command_validator, "Command Validator", "Go Library", "Validates command parameters and safety constraints")
 
-    Rel(command_controller, device_registry, "Validates device access via", "Internal API")
     Rel(command_controller, command_validator, "Validates command via", "Internal API")
     Rel(command_controller, proxy_resolver_client, "Resolves proxy via", "Internal API")
     Rel(proxy_resolver_client, proxy_service, "Queries proxy host from", "JSON/HTTPS")

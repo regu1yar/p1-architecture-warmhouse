@@ -12,21 +12,23 @@ Container(monitoring_service, "Monitoring Service", "Processes incoming device s
 Container(device_control_api, "Device Control API", "Provides API for controlling devices")
 
 Container_Boundary(connections_service, "Connections Service") {
-    Component(device_communication_controller, "Device Communication Controller", "Go WebSocket Handler", "Handles device messages and WebSocket connections")
-    Component(command_dispatcher, "Command Dispatcher", "Go Service", "Dispatches commands to devices via proxy")
-    Component(state_update_receiver, "State Update Receiver", "Go Handler", "Receives and processes device state updates")
+    Component(connection_acceptor, "Connection Acceptor", "Go WebSocket Handler", "Accepts new device connections and registers them in registry")
+    Component(state_update_receiver, "State Update Receiver", "Go Library, Kafka Producer", "Handles incoming messages from devices and processes state updates")
+    Component(command_dispatcher, "Command Dispatcher", "Go REST Handler", "Dispatches commands to devices via proxy")
     Component(connection_registry, "Connection Registry", "In-memory Database", "Tracks device-connection mapping and session state")
+    Component(heartbeat_service, "Heartbeat Service", "Go Service", "Sends regular heartbeats to proxy service to maintain connection health")
 
-    Rel(device_communication_controller, connection_registry, "Updates connection state in", "Internal API")
+    Rel(connection_acceptor, connection_registry, "Registers new connections in", "Internal API")
+    Rel_Neighbor(connection_acceptor, state_update_receiver, "Passes connection ownership to", "Internal API")
+    Rel(state_update_receiver, connection_registry, "Removes connection when it dies", "Internal API")
     Rel(command_dispatcher, connection_registry, "Queries device connection from", "Internal API")
-    Rel(state_update_receiver, connection_registry, "Validates device connection in", "Internal API")
     Rel(state_update_receiver, monitoring_service, "Sends device state updates to", "async, JSON/HTTPS")
     Rel(command_dispatcher, proxy_service, "Sends directives via", "WebSocket")
-    Rel(device_communication_controller, proxy_service, "Receives device updates from", "WebSocket")
+    Rel(heartbeat_service, proxy_service, "Sends heartbeats to", "HTTP / WebSocket")
 }
 
-Rel(proxy_service, device_communication_controller, "Forwards device updates to", "WebSocket")
+Rel(proxy_service, connection_acceptor, "Forwards new connections to", "WebSocket")
+Rel(proxy_service, state_update_receiver, "Forwards device messages to", "WebSocket")
 Rel(device_control_api, command_dispatcher, "Sends device commands to", "JSON/HTTPS")
-Rel(device_communication_controller, state_update_receiver, "Passes device updates to", "Internal message queue")
 
 @enduml

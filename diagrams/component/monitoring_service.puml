@@ -11,6 +11,7 @@ Container(connections_service, "Connections Service", "Service for 2-way interac
 Container(scenarios_api, "Scenarios API", "Provides API for managing and inferring scenarios")
 Container(device_state_storage_api, "Device State Storage API", "Provides API for storing and retrieving device states")
 Container(realtime_service, "Realtime Service", "Delivers real-time device state updates")
+ContainerDb(monitoring_subscriptions_db, "Monitoring Subscriptions DB", "Key-Value Store", "Stores subscriptions for device state updates")
 
 Container_Boundary(monitoring_service, "Monitoring Service") {
     Component(state_update_consumer, "State Update Consumer", "Kafka Consumer", "Consumes device state updates from message queue")
@@ -21,15 +22,16 @@ Container_Boundary(monitoring_service, "Monitoring Service") {
     Rel(state_update_consumer, state_processor, "Passes updates to", "Internal message queue")
     Rel(state_processor, subscription_manager, "Checks subscriptions via", "Internal API")
     Rel(state_processor, notification_dispatcher, "Sends notifications via", "Internal API")
-    Rel(notification_dispatcher, scenarios_api, "Sends updates to", "sync/async, JSON/HTTPS")
-    Rel(notification_dispatcher, device_state_storage_api, "Sends updates to", "sync/async, JSON/HTTPS")
-    Rel(notification_dispatcher, realtime_service, "Sends updates to", "sync/async, JSON/HTTPS")
+    Rel(notification_dispatcher, scenarios_api, "Sends updates to", "async, JSON/HTTPS")
+    Rel(notification_dispatcher, device_state_storage_api, "Sends updates to", "async, JSON/HTTPS")
+    Rel(notification_dispatcher, realtime_service, "Sends updates to", "async, JSON/HTTPS")
+    Rel(subscription_manager, monitoring_subscriptions_db, "Stores/retrieves subscriptions in", "JSON/HTTPS")
     Rel(subscription_manager, state_update_consumer, "Configures consumption for", "Internal API")
 }
 
 Rel(connections_service, state_update_consumer, "Sends device state updates", "async, JSON/HTTPS")
-Rel(scenarios_api, subscription_manager, "Subscribes to updates via", "sync/async, JSON/HTTPS")
-Rel(device_state_storage_api, subscription_manager, "Subscribes to updates via", "sync/async, JSON/HTTPS")
-Rel(realtime_service, subscription_manager, "Subscribes to updates via", "sync/async, JSON/HTTPS")
+Rel(scenarios_api, subscription_manager, "Subscribes to updates via", "JSON/HTTPS")
+Rel(device_state_storage_api, subscription_manager, "Subscribes to updates via", "JSON/HTTPS")
+Rel(realtime_service, subscription_manager, "Subscribes to updates via", "JSON/HTTPS")
 
 @enduml
