@@ -1,0 +1,58 @@
+name: PlantUML Diagrams
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    env:
+      DIAGRAM_DIRS: |
+        diagrams/context
+        diagrams/container
+        diagrams/component
+        diagrams/code
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Set up Java
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11'
+
+    - name: Install PlantUML
+      run: sudo apt-get install plantuml
+
+    - name: Generate Diagrams
+      run: |
+        echo "$DIAGRAM_DIRS" | while read -r dir; do
+          if [ -n "$dir" ] && ls "$dir"/*.puml 1> /dev/null 2>&1; then
+            echo "Generating diagrams in $dir"
+            plantuml "$dir"/*.puml
+          elif [ -n "$dir" ]; then
+            echo "No .puml files found in $dir, skipping"
+          fi
+        done
+
+    - name: Commit Diagrams
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add diagrams/**/*.png
+        # Check if there are any changes to commit
+        if git diff --cached --quiet; then
+          echo "No diagram changes to commit"
+        else
+          git commit -m "Automated diagram generation"
+          git push origin HEAD
+        fi
+      if: success()

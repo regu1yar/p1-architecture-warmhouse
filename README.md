@@ -103,13 +103,47 @@
 
 В этом задании вам нужно предоставить только диаграммы в модели C4. Мы не просим вас отдельно описывать получившиеся микросервисы и то, как вы определили взаимодействия между компонентами To-Be системы. Если вы правильно подготовите диаграммы C4, они и так это покажут.
 
-**Диаграмма контейнеров (Containers)**
+### Диаграмма контейнеров (Containers)
 
 ![Диаграмма контейнеров](/diagrams/container/Container.png)
 
-**Диаграмма компонентов (Components)**
+### Диаграмма компонентов (Components)
 
-Добавьте диаграмму для каждого из выделенных микросервисов.
+#### Authorization API
+
+![Authorization API](/diagrams/component/authorization_api.png)
+
+#### Connections Service
+
+![Connections Service](/diagrams/component/connections_service.png)
+
+#### Device Control API
+
+![Device Control API](/diagrams/component/device_control_api.png)
+
+#### Device Management API
+
+![Device Management API](/diagrams/component/device_management_api.png)
+
+#### Device State Storage API
+
+![Device State Storage API](/diagrams/component/device_state_storage_api.png)
+
+#### Monitoring Service
+
+![Monitoring Service](/diagrams/component/monitoring_service.png)
+
+#### Proxy Service
+
+![Proxy Service](/diagrams/component/proxy_service.png)
+
+#### Realtime Service
+
+![Realtime Service](/diagrams/component/realtime_service.png)
+
+#### Scenarios API
+
+![Scenarios API](/diagrams/component/scenarios_api.png)
 
 **Диаграмма кода (Code)**
 
