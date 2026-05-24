@@ -129,10 +129,6 @@
 
 ![Device State Storage API](/diagrams/component/device_state_storage_api.png)
 
-#### Monitoring Service
-
-![Monitoring Service](/diagrams/component/monitoring_service.png)
-
 #### Proxy Service
 
 ![Proxy Service](/diagrams/component/proxy_service.png)

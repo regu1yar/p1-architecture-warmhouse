@@ -61,6 +61,10 @@ jobs:
           echo "No diagram changes to commit"
         else
           git commit -m "Automated diagram generation"
-          git push origin HEAD
+          BRANCH=$(git branch --show-current)
+          if [ -z "$BRANCH" ]; then
+            BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          fi
+          git push origin HEAD:refs/heads/$BRANCH
         fi
       if: success()

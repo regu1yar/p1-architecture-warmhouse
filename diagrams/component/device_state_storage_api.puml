@@ -8,11 +8,11 @@ title Component diagram for Warmhouse system - Device State Storage API
 
 Container(spa, "Single Page Application", "javascript and angular", "Allows user to view device states via web interface")
 ContainerDb(device_state_db, "Device State DB", "Time-series Database", "Stores historical device states")
-Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
 
 Container_Boundary(device_state_storage_api, "Device State Storage API") {
     Component(state_storage_controller, "State Storage Controller", "Go REST API", "Handles device state retrieval requests from SPA")
-    Component(state_writer_service, "State Writer Service", "Go Service", "Subscribes to monitoring service and writes device state updates to database")
+    Component(state_writer_service, "State Writer Service", "Go Service, Kafka Consumer", "Consumes device state updates from message broker and writes to database")
     Component(state_query_engine, "State Query Engine", "Database Client", "Queries historical states with filters and aggregations")
     Component(cache_layer, "Cache Layer", "Redis Client", "Caches recent device states for read performance")
 
@@ -24,7 +24,6 @@ Container_Boundary(device_state_storage_api, "Device State Storage API") {
 }
 
 Rel(spa, state_storage_controller, "Gets last device states via", "JSON/HTTPS")
-Rel(state_writer_service, monitoring_service, "Subscribes to updates via", "sync, JSON/HTTPS")
-Rel(monitoring_service, state_writer_service, "Sends device state updates to", "async, JSON/HTTPS")
+BiRel(state_writer_service, message_broker, "Consumes device state updates from", "async, Kafka protocol")
 
 @enduml

@@ -26,7 +26,7 @@ Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
 
     ContainerDb(warmhouse_users_info_db, "Users Info DB", "Stores users' info: accounts, devices lists, scenarios, etc.")
 
-    Container(warmhouse_monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+    ContainerQueue(warmhouse_message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
     
     Container(warmhouse_device_state_storage_backend_api, "Device State Storage API", "Provides API for storing and retrieving device states")
     ContainerDb(warmhouse_device_state_db, "Device State DB", "Stores device states")
@@ -57,19 +57,19 @@ Rel(warmhouse_proxy_service, device, "Passes directives to", "WebSocket")
 Rel(warmhouse_proxy_service, warmhouse_connections_service, "Passes device updates to / balances across", "WebSocket")
 
 BiRel(warmhouse_connections_service, warmhouse_proxy_service, "Heartbeats / directives", "HTTP / WebSocket")
-Rel(warmhouse_connections_service, warmhouse_monitoring_service, "Sends device state updates", "async, JSON/HTTPS")
+Rel(warmhouse_connections_service, warmhouse_message_broker, "Publishes device state updates", "async, Kafka protocol")
 
 Rel(warmhouse_device_control_backend_api, warmhouse_proxy_service, "Resolves proxy host via", "JSON/HTTPS")
 Rel(warmhouse_device_control_backend_api, warmhouse_connections_service, "Passes directives via", "JSON/HTTPS")
 
 Rel(warmhouse_scenarios_backend_api, warmhouse_device_control_backend_api, "Sends directives via", "JSON/HTTPS")
 Rel(warmhouse_scenarios_backend_api, warmhouse_users_info_db, "Stores scenarios to", "HTTPS")
-BiRel(warmhouse_scenarios_backend_api, warmhouse_monitoring_service, "Subscribes to updates via / Sends device state updates to", "sync/async, JSON/HTTPS")
+Rel(warmhouse_scenarios_backend_api, warmhouse_message_broker, "Consumes device state updates", "async, Kafka protocol")
 
 Rel(warmhouse_device_state_storage_backend_api, warmhouse_device_state_db, "Stores historical data to", "JSON/HTTPS")
-BiRel(warmhouse_device_state_storage_backend_api, warmhouse_monitoring_service, "Subscribes to updates via / Sends device state updates to", "sync/async, JSON/HTTPS")
+Rel(warmhouse_device_state_storage_backend_api, warmhouse_message_broker, "Consumes device state updates", "async, Kafka protocol")
 
-BiRel(warmhouse_realtime_service, warmhouse_monitoring_service, "Subscribes to updates via / Sends device state updates to", "sync/async, JSON/HTTPS")
+Rel(warmhouse_realtime_service, warmhouse_message_broker, "Consumes device state updates", "async, Kafka protocol")
 
 Rel(warmhouse_authorization_backend_api, warmhouse_users_info_db, "Stores user info to", "JSON/HTTPS")
 

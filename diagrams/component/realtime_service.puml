@@ -7,11 +7,11 @@ LAYOUT_WITH_LEGEND()
 title Component diagram for Warmhouse system - Realtime Service
 
 Container(spa, "Single Page Application", "javascript and angular", "Establishes SSE connection for real-time updates")
-Container(monitoring_service, "Monitoring Service", "Processes incoming device state updates")
+ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
 
 Container_Boundary(realtime_service, "Realtime Service") {
     Component(sse_connection_manager, "SSE Connection Manager", "Go SSE Server", "Manages Server-Sent Events connections with clients")
-    Component(update_broadcaster, "Update Broadcaster", "Go Service", "Broadcasts device state updates to connected clients")
+    Component(update_broadcaster, "Update Broadcaster", "Go Service, Kafka Consumer", "Consumes device state updates from message broker and broadcasts to connected clients")
     Component(subscription_handler, "Subscription Handler", "Go Service", "Handles client subscriptions to device updates")
 
     Rel(sse_connection_manager, subscription_handler, "Registers client subscriptions via", "Internal API")
@@ -20,7 +20,6 @@ Container_Boundary(realtime_service, "Realtime Service") {
 }
 
 Rel(spa, sse_connection_manager, "Establishes SSE connection for real-time updates", "Server-Sent Events")
-Rel(monitoring_service, update_broadcaster, "Sends device state updates to", "async, JSON/HTTPS")
-Rel(subscription_handler, monitoring_service, "Subscribes to updates via", "JSON/HTTPS")
+BiRel(update_broadcaster, message_broker, "Consumes device state updates from", "async, Kafka protocol")
 
 @enduml
