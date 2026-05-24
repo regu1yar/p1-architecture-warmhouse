@@ -141,9 +141,9 @@
 
 ![Scenarios API](/diagrams/component/scenarios_api.png)
 
-**Диаграмма кода (Code)**
+### Диаграмма кода (Code)
 
-Добавьте одну диаграмму или несколько.
+![Диаграмма кода](/diagrams/code/Code.png)
 
 # Задание 3. Разработка ER-диаграммы
 
