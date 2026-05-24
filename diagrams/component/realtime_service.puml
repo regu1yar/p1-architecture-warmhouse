@@ -1,0 +1,25 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Realtime Service
+
+Container(spa, "Single Page Application", "javascript and angular", "Establishes SSE connection for real-time updates")
+ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
+
+Container_Boundary(realtime_service, "Realtime Service") {
+    Component(sse_connection_manager, "SSE Connection Manager", "Go SSE Server", "Manages Server-Sent Events connections with clients")
+    Component(update_broadcaster, "Update Broadcaster", "Go Service, Kafka Consumer", "Consumes device state updates from message broker and broadcasts to connected clients")
+    Component(subscription_handler, "Subscription Handler", "Go Service", "Handles client subscriptions to device updates")
+
+    Rel(sse_connection_manager, subscription_handler, "Registers client subscriptions via", "Internal API")
+    Rel(update_broadcaster, sse_connection_manager, "Sends updates to clients via", "Internal API")
+    Rel(subscription_handler, update_broadcaster, "Configures broadcast rules for", "Internal API")
+}
+
+Rel(spa, sse_connection_manager, "Establishes SSE connection for real-time updates", "Server-Sent Events")
+BiRel(update_broadcaster, message_broker, "Consumes device state updates from", "async, Kafka protocol")
+
+@enduml
