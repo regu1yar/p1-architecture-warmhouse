@@ -3,7 +3,8 @@ title FitLife Membership Management Code Diagram
 
 top to bottom direction
 
-!include ../common/C4_Component.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
 
 class User {
   +String name
