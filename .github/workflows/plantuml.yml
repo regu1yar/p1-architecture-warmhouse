@@ -56,15 +56,10 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add diagrams/**/*.png
-        # Check if there are any changes to commit
         if git diff --cached --quiet; then
           echo "No diagram changes to commit"
         else
           git commit -m "Automated diagram generation"
-          BRANCH=$(git branch --show-current)
-          if [ -z "$BRANCH" ]; then
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          fi
-          git push origin HEAD:refs/heads/$BRANCH
+          git push origin HEAD:${GITHUB_HEAD_REF}
         fi
       if: success()
