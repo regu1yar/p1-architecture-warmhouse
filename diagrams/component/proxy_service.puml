@@ -1,0 +1,43 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Proxy Service
+
+Container_Ext(device, "Device", "Smart home device", "Connects via WebSocket to send updates and receive directives")
+Container(connections_service, "Connections Service", "Service for 2-way interaction with devices")
+Container(device_control_api, "Device Control API", "Provides API for controlling devices")
+
+Container_Boundary(proxy_service, "Proxy Service") {
+    Component(load_balancer, "Load Balancer", "Go WebSocket Server", "Distributes device connections across multiple instances")
+    Component(connection_manager, "Connection Manager", "Go Service", "Tracks active device connections and their status")
+    Component(heartbeat_monitor, "Heartbeat Monitor", "Go Routine", "Monitors connection health and detects failures")
+    Component(proxy_resolver, "Proxy Resolver", "Go REST API", "Resolves target connection service for device routing")
+    Component(connection_cache, "Connection Cache", "Redis Client", "Caches active device connections for fast lookup")
+    Component(service_registry, "Service Registry", "Go Library", "Tracks available connections_service instances and their load")
+    
+    Rel(load_balancer, service_registry, "Queries least loaded instance from", "Internal API")
+    Rel(load_balancer, connection_manager, "Registers new connections in", "Internal API")
+    Rel(heartbeat_monitor, connection_manager, "Reports failures to", "Internal API")
+    Rel(proxy_resolver, connection_cache, "Queries connection info from", "Internal API")
+    Rel(connection_manager, connection_cache, "Updates cache via", "Internal API")
+    Rel(heartbeat_monitor, connection_cache, "Removes dead connections from", "Internal API")
+    Rel(service_registry, connection_cache, "Queries connection distribution from", "Internal API")
+    Rel(heartbeat_monitor, service_registry, "Updates instance health in", "Internal API")
+}
+
+ContainerDb(connection_registry_db, "Connection Registry DB", "Key-Value Store", "Persists device-connection mappings")
+
+Rel(connection_manager, connection_registry_db, "Stores/retrieves connections in", "JSON/HTTPS")
+Rel(connection_cache, connection_registry_db, "Warms cache from", "JSON/HTTPS")
+Rel(service_registry, connection_registry_db, "Loads instance data from", "JSON/HTTPS")
+
+Rel(device, load_balancer, "Connects to", "WebSocket")
+Rel(load_balancer, connections_service, "Forwards device updates to", "WebSocket")
+Rel(connections_service, load_balancer, "Sends directives via", "WebSocket")
+Rel(connections_service, heartbeat_monitor, "Sends heartbeats to", "HTTP / WebSocket")
+Rel(device_control_api, proxy_resolver, "Resolves proxy host via", "JSON/HTTPS")
+
+@enduml

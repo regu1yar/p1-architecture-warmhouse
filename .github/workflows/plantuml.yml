@@ -1,0 +1,65 @@
+name: PlantUML Diagrams
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    env:
+      DIAGRAM_DIRS: |
+        diagrams/context
+        diagrams/container
+        diagrams/component
+        diagrams/code
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+
+    - name: Install PlantUML (latest)
+      run: |
+        wget -O plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+        echo '#!/bin/bash' > /usr/local/bin/plantuml
+        echo 'java -jar /home/runner/work/p1-architecture-warmhouse/p1-architecture-warmhouse/plantuml.jar "$@"' >> /usr/local/bin/plantuml
+        chmod +x /usr/local/bin/plantuml
+
+    - name: Generate Diagrams
+      run: |
+        echo "$DIAGRAM_DIRS" | while read -r dir; do
+          if [ -n "$dir" ] && ls "$dir"/*.puml 1> /dev/null 2>&1; then
+            echo "Generating diagrams in $dir"
+            plantuml "$dir"/*.puml
+          elif [ -n "$dir" ]; then
+            echo "No .puml files found in $dir, skipping"
+          fi
+        done
+
+    - name: Commit Diagrams
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add diagrams/**/*.png
+        if git diff --cached --quiet; then
+          echo "No diagram changes to commit"
+        else
+          git commit -m "Automated diagram generation"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+        fi
+      if: success()
