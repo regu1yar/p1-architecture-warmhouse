@@ -20,6 +20,7 @@ jobs:
         diagrams/container
         diagrams/component
         diagrams/code
+        diagrams/er
 
     steps:
     - name: Checkout repository
