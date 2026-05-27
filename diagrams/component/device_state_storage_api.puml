@@ -1,0 +1,29 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Device State Storage API
+
+Container(spa, "Single Page Application", "javascript and angular", "Allows user to view device states via web interface")
+ContainerDb(device_state_db, "Device State DB", "Time-series Database", "Stores historical device states")
+ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
+
+Container_Boundary(device_state_storage_api, "Device State Storage API") {
+    Component(state_storage_controller, "State Storage Controller", "Go REST API", "Handles device state retrieval requests from SPA")
+    Component(state_writer_service, "State Writer Service", "Go Service, Kafka Consumer", "Consumes device state updates from message broker and writes to database")
+    Component(state_query_engine, "State Query Engine", "Database Client", "Queries historical states with filters and aggregations")
+    Component(cache_layer, "Cache Layer", "Redis Client", "Caches recent device states for read performance")
+
+    Rel(state_storage_controller, state_query_engine, "Queries historical data via", "Internal API")
+    Rel(state_storage_controller, cache_layer, "Reads/writes cache via", "Internal API")
+    Rel(state_writer_service, device_state_db, "Writes state updates to", "JSON/HTTPS")
+    Rel(state_query_engine, device_state_db, "Queries historical data from", "JSON/HTTPS")
+    Rel(cache_layer, state_query_engine, "Warms cache from", "Internal API")
+}
+
+Rel(spa, state_storage_controller, "Gets last device states via", "JSON/HTTPS")
+BiRel(state_writer_service, message_broker, "Consumes device state updates from", "async, Kafka protocol")
+
+@enduml

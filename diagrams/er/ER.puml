@@ -1,0 +1,113 @@
+@startuml
+title Warmhouse ER Diagram
+
+skinparam linetype ortho
+skinparam entity {
+    BackgroundColor #FEFECE
+    BorderColor #A80036
+}
+
+package "Users Info DB" {
+
+    entity "User" as user {
+        * id : BIGINT <<PK>>
+        --
+        * email : VARCHAR(255) <<UNIQUE>>
+        * name : VARCHAR(100)
+    }
+
+    entity "Household" as household {
+        * id : BIGINT <<PK>>
+        --
+        * user_id : BIGINT <<FK>>
+        * name : VARCHAR(100)
+    }
+
+    entity "Location" as location {
+        * id : BIGINT <<PK>>
+        --
+        * household_id : BIGINT <<FK>>
+        * name : VARCHAR(100)
+    }
+
+    entity "DeviceType" as device_type {
+        * id : BIGINT <<PK>>
+        --
+        * name : VARCHAR(100)
+        description : TEXT
+        properties_schema : JSONB
+        commands_schema : JSONB
+    }
+
+    entity "Device" as device {
+        * id : BIGINT <<PK>>
+        --
+        * device_type_id : BIGINT <<FK>>
+        * location_id : BIGINT <<FK>>
+        * serial_number : VARCHAR(100) <<UNIQUE>>
+        * name : VARCHAR(100)
+        * status : VARCHAR(20)
+        metadata : JSONB
+    }
+
+    entity "Scenario" as scenario {
+        * id : BIGINT <<PK>>
+        --
+        * user_id : BIGINT <<FK>>
+        * name : VARCHAR(100)
+        description : TEXT
+        * is_active : BOOLEAN
+    }
+
+    entity "ScenarioStage" as scenario_stage {
+        * id : BIGINT <<PK>>
+        --
+        * scenario_id : BIGINT <<FK>>
+        * device_id : BIGINT <<FK>>
+        * command_payload : JSONB
+        * timeout : INTERVAL
+        * max_attempts : INT
+        * backoff_strategy : VARCHAR(50)
+        retryable_errors : JSONB
+    }
+
+    entity "StageDependency" as stage_dependency {
+        * stage_id : BIGINT <<FK>>
+        * depends_on_stage_id : BIGINT <<FK>>
+    }
+
+    entity "ScenarioTriggerCondition" as trigger_condition {
+        * id : BIGINT <<PK>>
+        --
+        * scenario_id : BIGINT <<FK>>
+        * device_id : BIGINT <<FK>>
+        * field : VARCHAR(100)
+        * operator : VARCHAR(20)
+        * threshold : VARCHAR(255)
+    }
+}
+
+package "Device State DB" {
+
+    entity "DeviceState" as device_state {
+        * device_id : BIGINT
+        * timestamp : TIMESTAMPTZ
+        --
+        * state_payload : JSONB
+    }
+}
+
+user ||--o{ household
+household ||--o{ location
+location ||--o{ device
+device_type ||--o{ device
+device ||--o{ device_state
+user ||--o{ scenario
+scenario ||--o{ scenario_stage
+scenario ||--o{ trigger_condition
+device ||--o{ scenario_stage
+device ||--o{ trigger_condition
+scenario_stage ||--o{ stage_dependency : "stage_id"
+scenario_stage ||--o{ stage_dependency : "depends_on_stage_id"
+
+@enduml

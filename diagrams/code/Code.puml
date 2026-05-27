@@ -1,0 +1,130 @@
+@startuml
+title Warmhouse Scenarios API Execution Component - Improved Design
+
+top to bottom direction
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
+
+interface ScenarioRepository {
+  +GetGraph(id int64) (ScenarioGraph, error)
+  +SaveGraphExecutionState(state GraphExecutionState) error
+  +GetGraphExecutionState(executionId string) (GraphExecutionState, error)
+}
+
+interface StageExecutor {
+  +Execute(stage ScenarioStage, ctx Context) (chan struct{}, error)
+}
+
+class ScenarioStage {
+  +deviceId int64
+  +commandPayload string
+  +timeout Duration
+  +retryPolicy RetryPolicy
+}
+
+class ScenarioGraph {
+  +stages []ScenarioStage
+  +dependencies [][]int
+}
+
+class ScenarioDescription {
+  +id int64
+  +name string
+  +graph ScenarioGraph
+}
+
+class DependencyScheduler {
+  +dependencies [][]int
+  +ValidateDAG() error
+  +GetInitialStages()[]int
+  +CompleteStage(int) ([]int readyStages)
+}
+
+class ExecutionContextFactory {
+  +CreateGraphContext(graph ScenarioGraph, repo ScenarioRepository) GraphExecutionContext
+  +CreateStageContext(stage ScenarioStage, executor StageExecutor) StageExecutionContext
+}
+
+class GraphExecutionContext {
+  +stages []ScenarioStage
+  +dependencies [][]int
+  +scheduler DependencyScheduler
+  +stageExecutors map[int]StageExecutionContext
+  +GraphExecutionState GraphExecutionState
+  +Start(ctx Context) error
+  +Stop(ctx Context) error
+  +GetStatus() GraphExecutionStatus
+}
+
+class StageExecutionContext {
+  +stage *ScenarioStage
+  +executor StageExecutor
+  +status StageStatus
+  +result chan struct{}
+  +error error
+  +Start(ctx Context) error
+  +Cancel()
+  +Wait() chan struct{}
+}
+
+enum GraphExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum StageStatus {
+  PENDING
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+class GraphExecutionState {
+  +status GraphExecutionStatus
+  +activeStages []int
+  +completedStages []int
+  +failedStages map[int]error
+  +startTime Time
+  +endTime Time
+}
+
+class RetryPolicy {
+  +maxAttempts int
+  +backoffStrategy BackoffStrategy
+  +retryableErrors []error
+}
+
+ScenarioDescription "1" *-- "1" ScenarioGraph : describes
+ScenarioGraph "1" *-- "0..*" ScenarioStage : consists of
+
+ScenarioStage "1" *-- "1" RetryPolicy : uses
+
+GraphExecutionContext "1" *-- "1" DependencyScheduler : uses
+GraphExecutionContext "1" *-- "1" GraphExecutionState : maintains
+GraphExecutionContext "1" *-- "0..*" StageExecutionContext : manages
+
+GraphExecutionState "1" *-- "1" GraphExecutionStatus : stores 
+
+StageExecutionContext "1" --> "1" ScenarioStage : executes
+StageExecutionContext "1" --> "1" StageExecutor : delegates to
+StageExecutionContext "1" --> "1" StageStatus : stores
+
+ExecutionContextFactory "1" --> "1" ScenarioRepository : depends on
+ExecutionContextFactory "1" --> "1" StageExecutor : depends on
+
+GraphExecutionContext ..> ScenarioRepository : uses
+
+note right of ScenarioRepository
+  Persistence abstraction for
+  scenarios and execution state.
+end note
+
+note left of DependencyScheduler
+  DAG scheduling logic.
+end note
+
+@enduml
