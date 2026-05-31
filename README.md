@@ -167,11 +167,29 @@
 
 ### 1. Тип API
 
-Укажите, какой тип API вы будете использовать для взаимодействия микросервисов. Объясните своё решение.
+Тип API выбирался под характер взаимодействия между компонентами:
+
+- **REST (OpenAPI)** — для синхронных взаимодействий, где вызывающей стороне нужен
+  немедленный результат:
+  - **Device Control API** — отправка команды устройству (нужен ответ «команда принята/отклонена»);
+  - **Device Management API** — регистрация и удаление устройства (нужен результат операции и id).
+- **AsyncAPI** — для асинхронных, событийных и потоковых взаимодействий, где ответ
+  немедленно не нужен:
+  - **Proxy Service** — приём heartbeat'ов от инстансов Connections Service (поток сигналов «инстанс жив»);
+  - **Realtime Service** — доставка обновлений состояния устройств в SPA через SSE;
+  - **Scenarios API** — потребление обновлений состояния устройств из Kafka для проверки триггеров сценариев.
 
 ### 2. Документация API
 
-Здесь приложите ссылки на документацию API для микросервисов, которые вы спроектировали в первой части проектной работы. Для документирования используйте Swagger/OpenAPI или AsyncAPI.
+Спецификации лежат в [`docs/api/`](/docs/api).
+
+| Взаимодействие | Компонент (диаграмма) | Тип | Спецификация |
+| --- | --- | --- | --- |
+| SPA / Scenarios API → отправка команды устройству | Device Control API · Command Controller | REST | [device_control_api.openapi.yml](/docs/api/device_control_api.openapi.yml) |
+| SPA → регистрация и удаление устройства | Device Management API · Device Management Controller | REST | [device_management_api.openapi.yml](/docs/api/device_management_api.openapi.yml) |
+| Connections Service → heartbeat'ы о живом инстансе | Proxy Service · Heartbeat Monitor | AsyncAPI (WebSocket) | [proxy_service.asyncapi.yml](/docs/api/proxy_service.asyncapi.yml) |
+| SPA ↔ обновления состояния устройств в реальном времени | Realtime Service · SSE Connection Manager | AsyncAPI (SSE) | [realtime_service.asyncapi.yml](/docs/api/realtime_service.asyncapi.yml) |
+| Message Broker → потребление обновлений состояния для триггеров сценариев | Scenarios API · Monitoring Component | AsyncAPI (Kafka) | [scenarios_api.asyncapi.yml](/docs/api/scenarios_api.asyncapi.yml) |
 
 # Задание 5. Работа с docker и docker-compose
 

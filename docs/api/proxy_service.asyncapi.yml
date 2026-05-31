@@ -1,0 +1,83 @@
+asyncapi: '3.0.0'
+info:
+  title: Proxy Service Heartbeat API
+  version: '1.0.0'
+servers:
+  proxy:
+    host: proxy-service.warmhouse
+    protocol: http
+    pathname: /v1/heartbeat
+channels:
+  heartbeat:
+    address: /v1/heartbeat
+    messages:
+      heartbeat:
+        $ref: '#/components/messages/Heartbeat'
+operations:
+  receiveHeartbeat:
+    action: receive
+    summary: Proxy Service принимает heartbeat от инстанса Connections Service.
+    channel:
+      $ref: '#/channels/heartbeat'
+    messages:
+      - $ref: '#/channels/heartbeat/messages/heartbeat'
+components:
+  messages:
+    Heartbeat:
+      name: Heartbeat
+      summary: Сигнал «инстанс жив» с текущими показателями нагрузки.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/HeartbeatPayload'
+      examples:
+        - name: healthy
+          payload:
+            instance_id: connections-service-7d9f-abc
+            status: healthy
+            active_connections: 1840
+            max_connections: 5000
+            load_factor: 0.37
+            sent_at: '2026-05-31T12:00:00Z'
+  schemas:
+    HeartbeatPayload:
+      type: object
+      required:
+        - instance_id
+        - status
+        - active_connections
+        - sent_at
+      properties:
+        instance_id:
+          type: string
+          description: Идентификатор инстанса Connections Service
+          example: connections-service-7d9f-abc
+        status:
+          type: string
+          description: Самооценка состояния инстанса
+          enum:
+            - healthy
+            - degraded
+            - draining
+          example: healthy
+        active_connections:
+          type: integer
+          minimum: 0
+          description: Число активных device-соединений на инстансе
+          example: 1840
+        max_connections:
+          type: integer
+          minimum: 0
+          description: Максимальная ёмкость инстанса по соединениям
+          example: 5000
+        load_factor:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Нормированная нагрузка (0 — простой, 1 — предел)
+          example: 0.37
+        sent_at:
+          type: string
+          format: date-time
+          description: Момент формирования heartbeat'а
+          example: '2026-05-31T12:00:00Z'

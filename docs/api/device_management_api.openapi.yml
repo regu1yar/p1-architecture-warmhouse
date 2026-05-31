@@ -1,0 +1,265 @@
+openapi: '3.0.3'
+info:
+  title: Device Management API
+  version: '1.0.0'
+servers:
+  - url: https://device-management.warmhouse/api/v1
+tags:
+  - name: Devices
+    description: Регистрация и удаление устройств
+paths:
+  /devices:
+    post:
+      operationId: registerDevice
+      summary: Зарегистрировать новое устройство
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+            examples:
+              thermostat:
+                summary: Регистрация термостата в гостиной
+                value:
+                  device_type_id: 7
+                  location_id: 12
+                  serial_number: TH-2026-000123
+                  name: Термостат в гостиной
+                  metadata:
+                    firmware: 2.4.1
+                    vendor: warmhouse
+      responses:
+        '201':
+          description: Устройство зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              examples:
+                created:
+                  value:
+                    id: 42
+                    device_type_id: 7
+                    location_id: 12
+                    serial_number: TH-2026-000123
+                    name: Термостат в гостиной
+                    status: online
+                    metadata:
+                      firmware: 2.4.1
+                      vendor: warmhouse
+        '400':
+          description: Некорректное тело запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validation:
+                  value:
+                    code: validation_error
+                    message: Field serial_number is required
+        '401':
+          description: Отсутствует или недействителен JWT-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '403':
+          description: Пользователь не владеет указанным помещением
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  value:
+                    code: forbidden
+                    message: User does not own location 12
+        '409':
+          description: Устройство с таким серийным номером уже зарегистрировано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                conflict:
+                  value:
+                    code: serial_number_conflict
+                    message: Device with serial number TH-2026-000123 already exists
+        '500':
+          description: Внутренняя ошибка сервиса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while registering device
+  /devices/{deviceId}:
+    delete:
+      operationId: deleteDevice
+      summary: Удалить устройство
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Уникальный идентификатор устройства (`Device.id`)
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      responses:
+        '204':
+          description: Устройство удалено
+        '401':
+          description: Отсутствует или недействителен JWT-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '403':
+          description: Пользователь не владеет устройством
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  value:
+                    code: forbidden
+                    message: User does not own device 42
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    code: device_not_found
+                    message: Device 42 does not exist
+        '500':
+          description: Внутренняя ошибка сервиса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while deleting device
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-токен, выданный Authorization API
+  schemas:
+    RegisterDeviceRequest:
+      type: object
+      required:
+        - device_type_id
+        - serial_number
+        - name
+      properties:
+        device_type_id:
+          type: integer
+          format: int64
+          description: Тип устройства (`DeviceType.id`)
+          example: 7
+        location_id:
+          type: integer
+          format: int64
+          description: Помещение, к которому привязывается устройство (`Location.id`)
+          example: 12
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Серийный номер устройства, уникальный в пределах системы
+          example: TH-2026-000123
+        name:
+          type: string
+          maxLength: 100
+          description: Отображаемое имя устройства
+          example: Термостат в гостиной
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Произвольные метаданные устройства (`Device.metadata`)
+          example:
+            firmware: 2.4.1
+            vendor: warmhouse
+    Device:
+      type: object
+      required:
+        - id
+        - device_type_id
+        - serial_number
+        - name
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        device_type_id:
+          type: integer
+          format: int64
+          example: 7
+        location_id:
+          type: integer
+          format: int64
+          example: 12
+        serial_number:
+          type: string
+          example: TH-2026-000123
+        name:
+          type: string
+          example: Термостат в гостиной
+        status:
+          type: string
+          description: Статус устройства в системе
+          enum:
+            - online
+            - offline
+          example: online
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            firmware: 2.4.1
+            vendor: warmhouse
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки
+          example: device_not_found
+        message:
+          type: string
+          description: Человекочитаемое описание ошибки
+          example: Device 42 does not exist

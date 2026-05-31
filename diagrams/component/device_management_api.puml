@@ -10,17 +10,16 @@ Container(spa, "Single Page Application", "javascript and angular", "Allows user
 ContainerDb(users_info_db, "Users Info DB", "Relational Database Schema", "Stores users' info: accounts, devices lists, scenarios, etc.")
 
 Container_Boundary(device_management_api, "Device Management API") {
-    Component(device_registration_controller, "Device Registration Controller", "Go REST API", "Handles new device registration and pairing")
+    Component(device_management_controller, "Device Management Controller", "Go REST API", "Handles requests")
     Component(device_metadata_manager, "Device Metadata Manager", "Go Service", "Manages device metadata and configuration")
     Component(ownership_validator, "Ownership Validator", "Go Service", "Validates user-device ownership and permissions")
 
-    Rel(device_registration_controller, ownership_validator, "Validates ownership via", "Internal API")
-    Rel(device_registration_controller, device_metadata_manager, "Stores metadata via", "Internal API")
+    Rel(device_management_controller, ownership_validator, "Validates ownership via", "Internal API")
+    Rel(device_management_controller, device_metadata_manager, "Stores metadata via", "Internal API")
     Rel(device_metadata_manager, users_info_db, "Stores device info to", "JSON/HTTPS")
     Rel(ownership_validator, users_info_db, "Validates ownership against", "JSON/HTTPS")
 }
 
-Rel(spa, device_registration_controller, "Manages devices via", "JSON/HTTPS")
-Rel(spa, device_metadata_manager, "Views/updates device metadata via", "JSON/HTTPS")
+Rel(spa, device_management_controller, "Manages devices via", "JSON/HTTPS")
 
 @enduml

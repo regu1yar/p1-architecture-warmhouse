@@ -1,0 +1,173 @@
+openapi: '3.0.3'
+info:
+  title: Device Control API
+  version: '1.0.0'
+servers:
+  - url: https://device-control.warmhouse/api/v1
+tags:
+  - name: Commands
+    description: Отправка команд на устройства
+paths:
+  /devices/{deviceId}/commands:
+    post:
+      operationId: sendDeviceCommand
+      summary: Отправить команду устройству
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Уникальный идентификатор устройства (`Device.id`)
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+            examples:
+              setTemperature:
+                summary: Выставить целевую температуру на термостате
+                value:
+                  type: set_temperature
+                  parameters:
+                    target_celsius: 22.5
+              turnOff:
+                summary: Выключить устройство
+                value:
+                  type: set_power
+                  parameters:
+                    state: 'off'
+      responses:
+        '200':
+          description: Команда передана на устройство
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandSent'
+              examples:
+                success:
+                  value:
+                    status: OK
+        '400':
+          description: Некорректная команда (не прошла валидацию против commands_schema)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidParameter:
+                  value:
+                    code: invalid_command
+                    message: 'Parameter target_celsius is out of allowed range [5, 35]'
+        '401':
+          description: Отсутствует или недействителен JWT-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    code: device_not_found
+                    message: Device 42 does not exist
+        '409':
+          description: Устройство офлайн и не может принять команду
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                offline:
+                  value:
+                    code: device_offline
+                    message: Device 42 has no active connection
+        '500':
+          description: Внутренняя ошибка сервиса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while dispatching command
+        '503':
+          description: Нижестоящий сервис недоступен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unavailable:
+                  value:
+                    code: dispatch_unavailable
+                    message: Connections Service is temporarily unavailable
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT-токен, выданный Authorization API
+  schemas:
+    CommandRequest:
+      type: object
+      required:
+        - type
+        - parameters
+      properties:
+        type:
+          type: string
+          description: >
+            Идентификатор команды, определённый в `DeviceType.commands_schema`
+            для типа целевого устройства.
+          example: set_temperature
+        parameters:
+          type: object
+          additionalProperties: true
+          description: >
+            Параметры команды. Структура определяется `commands_schema` типа
+            устройства и проверяется Command Validator'ом.
+          example:
+            target_celsius: 22.5
+    CommandSent:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
+          example: OK
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки
+          example: device_not_found
+        message:
+          type: string
+          description: Человекочитаемое описание ошибки
+          example: Device 42 does not exist
