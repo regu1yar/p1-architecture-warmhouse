@@ -1,0 +1,69 @@
+asyncapi: '3.0.0'
+info:
+  title: Scenarios API — Monitoring
+  version: '1.0.0'
+servers:
+  kafka:
+    host: kafka.warmhouse:9092
+    protocol: kafka
+channels:
+  deviceStateUpdates:
+    address: warmhouse.device.state.updates
+    messages:
+      deviceStateUpdated:
+        $ref: '#/components/messages/DeviceStateUpdated'
+operations:
+  consumeDeviceStateUpdates:
+    action: receive
+    summary: Monitoring Component читает обновления состояния и сверяет их с условиями запуска сценариев.
+    channel:
+      $ref: '#/channels/deviceStateUpdates'
+    messages:
+      - $ref: '#/channels/deviceStateUpdates/messages/deviceStateUpdated'
+components:
+  messages:
+    DeviceStateUpdated:
+      name: DeviceStateUpdated
+      summary: Обновление состояния устройства (`DeviceState`), опубликованное в Kafka.
+      contentType: application/json
+      bindings:
+        kafka:
+          key:
+            type: integer
+            format: int64
+            description: Ключ партиционирования — device_id
+      payload:
+        $ref: '#/components/schemas/DeviceStatePayload'
+      examples:
+        - name: temperatureUpdate
+          payload:
+            device_id: 42
+            timestamp: '2026-05-31T12:00:03Z'
+            state_payload:
+              temperature_celsius: 18.4
+              mode: heating
+  schemas:
+    DeviceStatePayload:
+      type: object
+      required:
+        - device_id
+        - timestamp
+        - state_payload
+      properties:
+        device_id:
+          type: integer
+          format: int64
+          description: Идентификатор устройства
+          example: 42
+        timestamp:
+          type: string
+          format: date-time
+          description: Момент фиксации состояния
+          example: '2026-05-31T12:00:03Z'
+        state_payload:
+          type: object
+          additionalProperties: true
+          description: Полезная нагрузка состояния (`DeviceState.state_payload`)
+          example:
+            temperature_celsius: 18.4
+            mode: heating
