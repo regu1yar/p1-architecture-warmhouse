@@ -6,12 +6,12 @@ servers:
   - url: https://device-management.warmhouse/api/v1
 tags:
   - name: Devices
-    description: Регистрация и удаление устройств
+    description: Registering and removing devices
 paths:
   /devices:
     post:
       operationId: registerDevice
-      summary: Зарегистрировать новое устройство
+      summary: Register a new device
       security:
         - bearerAuth: []
       requestBody:
@@ -22,18 +22,18 @@ paths:
               $ref: '#/components/schemas/RegisterDeviceRequest'
             examples:
               thermostat:
-                summary: Регистрация термостата в гостиной
+                summary: Registering a living room thermostat
                 value:
                   device_type_id: 7
                   location_id: 12
                   serial_number: TH-2026-000123
-                  name: Термостат в гостиной
+                  name: Living room thermostat
                   metadata:
                     firmware: 2.4.1
                     vendor: warmhouse
       responses:
         '201':
-          description: Устройство зарегистрировано
+          description: Device registered
           content:
             application/json:
               schema:
@@ -45,13 +45,13 @@ paths:
                     device_type_id: 7
                     location_id: 12
                     serial_number: TH-2026-000123
-                    name: Термостат в гостиной
+                    name: Living room thermostat
                     status: online
                     metadata:
                       firmware: 2.4.1
                       vendor: warmhouse
         '400':
-          description: Некорректное тело запроса
+          description: Invalid request body
           content:
             application/json:
               schema:
@@ -62,7 +62,7 @@ paths:
                     code: validation_error
                     message: Field serial_number is required
         '401':
-          description: Отсутствует или недействителен JWT-токен
+          description: Missing or invalid JWT token
           content:
             application/json:
               schema:
@@ -73,7 +73,7 @@ paths:
                     code: unauthorized
                     message: Missing or invalid authentication token
         '403':
-          description: Пользователь не владеет указанным помещением
+          description: User does not own the specified location
           content:
             application/json:
               schema:
@@ -84,7 +84,7 @@ paths:
                     code: forbidden
                     message: User does not own location 12
         '409':
-          description: Устройство с таким серийным номером уже зарегистрировано
+          description: A device with this serial number is already registered
           content:
             application/json:
               schema:
@@ -95,7 +95,7 @@ paths:
                     code: serial_number_conflict
                     message: Device with serial number TH-2026-000123 already exists
         '500':
-          description: Внутренняя ошибка сервиса
+          description: Internal service error
           content:
             application/json:
               schema:
@@ -108,23 +108,23 @@ paths:
   /devices/{deviceId}:
     delete:
       operationId: deleteDevice
-      summary: Удалить устройство
+      summary: Delete a device
       security:
         - bearerAuth: []
       parameters:
         - name: deviceId
           in: path
           required: true
-          description: Уникальный идентификатор устройства (`Device.id`)
+          description: Unique device identifier (`Device.id`)
           schema:
             type: integer
             format: int64
             example: 42
       responses:
         '204':
-          description: Устройство удалено
+          description: Device deleted
         '401':
-          description: Отсутствует или недействителен JWT-токен
+          description: Missing or invalid JWT token
           content:
             application/json:
               schema:
@@ -135,7 +135,7 @@ paths:
                     code: unauthorized
                     message: Missing or invalid authentication token
         '403':
-          description: Пользователь не владеет устройством
+          description: User does not own the device
           content:
             application/json:
               schema:
@@ -146,7 +146,7 @@ paths:
                     code: forbidden
                     message: User does not own device 42
         '404':
-          description: Устройство не найдено
+          description: Device not found
           content:
             application/json:
               schema:
@@ -157,7 +157,7 @@ paths:
                     code: device_not_found
                     message: Device 42 does not exist
         '500':
-          description: Внутренняя ошибка сервиса
+          description: Internal service error
           content:
             application/json:
               schema:
@@ -173,7 +173,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT-токен, выданный Authorization API
+      description: JWT token issued by the Authorization API
   schemas:
     RegisterDeviceRequest:
       type: object
@@ -185,27 +185,27 @@ components:
         device_type_id:
           type: integer
           format: int64
-          description: Тип устройства (`DeviceType.id`)
+          description: Device type (`DeviceType.id`)
           example: 7
         location_id:
           type: integer
           format: int64
-          description: Помещение, к которому привязывается устройство (`Location.id`)
+          description: Location the device is attached to (`Location.id`)
           example: 12
         serial_number:
           type: string
           maxLength: 100
-          description: Серийный номер устройства, уникальный в пределах системы
+          description: Device serial number, unique across the system
           example: TH-2026-000123
         name:
           type: string
           maxLength: 100
-          description: Отображаемое имя устройства
-          example: Термостат в гостиной
+          description: Device display name
+          example: Living room thermostat
         metadata:
           type: object
           additionalProperties: true
-          description: Произвольные метаданные устройства (`Device.metadata`)
+          description: Arbitrary device metadata (`Device.metadata`)
           example:
             firmware: 2.4.1
             vendor: warmhouse
@@ -235,10 +235,10 @@ components:
           example: TH-2026-000123
         name:
           type: string
-          example: Термостат в гостиной
+          example: Living room thermostat
         status:
           type: string
-          description: Статус устройства в системе
+          description: Device status in the system
           enum:
             - online
             - offline
@@ -257,9 +257,9 @@ components:
       properties:
         code:
           type: string
-          description: Машиночитаемый код ошибки
+          description: Machine-readable error code
           example: device_not_found
         message:
           type: string
-          description: Человекочитаемое описание ошибки
+          description: Human-readable error description
           example: Device 42 does not exist

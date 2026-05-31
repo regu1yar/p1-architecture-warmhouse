@@ -21,14 +21,14 @@ channels:
 operations:
   manageSubscription:
     action: receive
-    summary: SPA присылает список устройств для подписки.
+    summary: The SPA sends the list of devices to subscribe to.
     channel:
       $ref: '#/channels/subscriptions'
     messages:
       - $ref: '#/channels/subscriptions/messages/subscriptionRequest'
   streamDeviceState:
     action: send
-    summary: Realtime Service транслирует клиенту обновление состояния устройства.
+    summary: Realtime Service streams a device state update to the client.
     channel:
       $ref: '#/channels/deviceStateStream'
     messages:
@@ -37,7 +37,7 @@ components:
   messages:
     SubscriptionRequest:
       name: SubscriptionRequest
-      summary: Список устройств для подписки.
+      summary: List of devices to subscribe to.
       contentType: application/json
       payload:
         $ref: '#/components/schemas/SubscriptionRequestPayload'
@@ -48,7 +48,7 @@ components:
             device_ids: [42, 57]
     DeviceStateUpdate:
       name: DeviceStateUpdate
-      summary: Одна запись состояния устройства (`DeviceState`).
+      summary: A single device state record (`DeviceState`).
       contentType: application/json
       payload:
         $ref: '#/components/schemas/DeviceStatePayload'
@@ -70,14 +70,14 @@ components:
       properties:
         action:
           type: string
-          description: Тип операции над подпиской
+          description: Subscription operation type
           enum:
             - subscribe
             - unsubscribe
           example: subscribe
         device_ids:
           type: array
-          description: Идентификаторы устройств (`Device.id`)
+          description: Device identifiers (`Device.id`)
           minItems: 1
           items:
             type: integer
@@ -93,17 +93,17 @@ components:
         device_id:
           type: integer
           format: int64
-          description: Идентификатор устройства
+          description: Device identifier
           example: 42
         timestamp:
           type: string
           format: date-time
-          description: Момент фиксации состояния
+          description: Time the state was captured
           example: '2026-05-31T12:00:03Z'
         state_payload:
           type: object
           additionalProperties: true
-          description: Полезная нагрузка состояния (`DeviceState.state_payload`)
+          description: State payload (`DeviceState.state_payload`)
           example:
             temperature_celsius: 21.8
             target_celsius: 22.5

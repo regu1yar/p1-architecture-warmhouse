@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DIAGRAM_DIRS: |
-        diagrams/context
-        diagrams/container
-        diagrams/component
-        diagrams/code
-        diagrams/er
+        docs/diagrams/context
+        docs/diagrams/container
+        docs/diagrams/component
+        docs/diagrams/code
+        docs/diagrams/er
 
     steps:
     - name: Checkout repository
@@ -59,7 +59,7 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git add diagrams/**/*.png
+        git add docs/diagrams/**/*.png
         if git diff --cached --quiet; then
           echo "No diagram changes to commit"
         else

@@ -97,7 +97,7 @@
 
 ### 5. Визуализация контекста системы — диаграмма С4
 
-![Диаграмма контекста](/diagrams/context/Context.png)
+![Диаграмма контекста](/docs/diagrams/context/Context.png)
 
 # Задание 2. Проектирование микросервисной архитектуры
 
@@ -105,49 +105,49 @@
 
 ### Диаграмма контейнеров (Containers)
 
-![Диаграмма контейнеров](/diagrams/container/Container.png)
+![Диаграмма контейнеров](/docs/diagrams/container/Container.png)
 
 ### Диаграмма компонентов (Components)
 
 #### Authorization API
 
-![Authorization API](/diagrams/component/authorization_api.png)
+![Authorization API](/docs/diagrams/component/authorization_api.png)
 
 #### Connections Service
 
-![Connections Service](/diagrams/component/connections_service.png)
+![Connections Service](/docs/diagrams/component/connections_service.png)
 
 #### Device Control API
 
-![Device Control API](/diagrams/component/device_control_api.png)
+![Device Control API](/docs/diagrams/component/device_control_api.png)
 
 #### Device Management API
 
-![Device Management API](/diagrams/component/device_management_api.png)
+![Device Management API](/docs/diagrams/component/device_management_api.png)
 
 #### Device State Storage API
 
-![Device State Storage API](/diagrams/component/device_state_storage_api.png)
+![Device State Storage API](/docs/diagrams/component/device_state_storage_api.png)
 
 #### Proxy Service
 
-![Proxy Service](/diagrams/component/proxy_service.png)
+![Proxy Service](/docs/diagrams/component/proxy_service.png)
 
 #### Realtime Service
 
-![Realtime Service](/diagrams/component/realtime_service.png)
+![Realtime Service](/docs/diagrams/component/realtime_service.png)
 
 #### Scenarios API
 
-![Scenarios API](/diagrams/component/scenarios_api.png)
+![Scenarios API](/docs/diagrams/component/scenarios_api.png)
 
 ### Диаграмма кода (Code)
 
-![Диаграмма кода](/diagrams/code/Code.png)
+![Диаграмма кода](/docs/diagrams/code/Code.png)
 
 # Задание 3. Разработка ER-диаграммы
 
-![ER-диаграмма](/diagrams/er/ER.png)
+![ER-диаграмма](/docs/diagrams/er/ER.png)
 
 **Users Info DB (реляционная БД):**
 - **User** — пользователь системы

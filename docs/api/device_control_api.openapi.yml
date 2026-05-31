@@ -6,19 +6,19 @@ servers:
   - url: https://device-control.warmhouse/api/v1
 tags:
   - name: Commands
-    description: Отправка команд на устройства
+    description: Sending commands to devices
 paths:
   /devices/{deviceId}/commands:
     post:
       operationId: sendDeviceCommand
-      summary: Отправить команду устройству
+      summary: Send a command to a device
       security:
         - bearerAuth: []
       parameters:
         - name: deviceId
           in: path
           required: true
-          description: Уникальный идентификатор устройства (`Device.id`)
+          description: Unique device identifier (`Device.id`)
           schema:
             type: integer
             format: int64
@@ -31,20 +31,20 @@ paths:
               $ref: '#/components/schemas/CommandRequest'
             examples:
               setTemperature:
-                summary: Выставить целевую температуру на термостате
+                summary: Set the target temperature on a thermostat
                 value:
                   type: set_temperature
                   parameters:
                     target_celsius: 22.5
               turnOff:
-                summary: Выключить устройство
+                summary: Turn the device off
                 value:
                   type: set_power
                   parameters:
                     state: 'off'
       responses:
         '200':
-          description: Команда передана на устройство
+          description: Command delivered to the device
           content:
             application/json:
               schema:
@@ -54,7 +54,7 @@ paths:
                   value:
                     status: OK
         '400':
-          description: Некорректная команда (не прошла валидацию против commands_schema)
+          description: Invalid command (failed validation against commands_schema)
           content:
             application/json:
               schema:
@@ -65,7 +65,7 @@ paths:
                     code: invalid_command
                     message: 'Parameter target_celsius is out of allowed range [5, 35]'
         '401':
-          description: Отсутствует или недействителен JWT-токен
+          description: Missing or invalid JWT token
           content:
             application/json:
               schema:
@@ -76,7 +76,7 @@ paths:
                     code: unauthorized
                     message: Missing or invalid authentication token
         '404':
-          description: Устройство не найдено
+          description: Device not found
           content:
             application/json:
               schema:
@@ -87,7 +87,7 @@ paths:
                     code: device_not_found
                     message: Device 42 does not exist
         '409':
-          description: Устройство офлайн и не может принять команду
+          description: Device is offline and cannot accept the command
           content:
             application/json:
               schema:
@@ -98,7 +98,7 @@ paths:
                     code: device_offline
                     message: Device 42 has no active connection
         '500':
-          description: Внутренняя ошибка сервиса
+          description: Internal service error
           content:
             application/json:
               schema:
@@ -109,7 +109,7 @@ paths:
                     code: internal_error
                     message: Unexpected error while dispatching command
         '503':
-          description: Нижестоящий сервис недоступен
+          description: Downstream service unavailable
           content:
             application/json:
               schema:
@@ -125,7 +125,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT-токен, выданный Authorization API
+      description: JWT token issued by the Authorization API
   schemas:
     CommandRequest:
       type: object
@@ -136,15 +136,15 @@ components:
         type:
           type: string
           description: >
-            Идентификатор команды, определённый в `DeviceType.commands_schema`
-            для типа целевого устройства.
+            Command identifier defined in `DeviceType.commands_schema`
+            for the target device type.
           example: set_temperature
         parameters:
           type: object
           additionalProperties: true
           description: >
-            Параметры команды. Структура определяется `commands_schema` типа
-            устройства и проверяется Command Validator'ом.
+            Command parameters. The structure is defined by the device type's
+            `commands_schema` and validated by the Command Validator.
           example:
             target_celsius: 22.5
     CommandSent:
@@ -165,9 +165,9 @@ components:
       properties:
         code:
           type: string
-          description: Машиночитаемый код ошибки
+          description: Machine-readable error code
           example: device_not_found
         message:
           type: string
-          description: Человекочитаемое описание ошибки
+          description: Human-readable error description
           example: Device 42 does not exist

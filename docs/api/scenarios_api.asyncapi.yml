@@ -15,7 +15,7 @@ channels:
 operations:
   consumeDeviceStateUpdates:
     action: receive
-    summary: Monitoring Component читает обновления состояния и сверяет их с условиями запуска сценариев.
+    summary: Monitoring Component reads state updates and checks them against scenario trigger conditions.
     channel:
       $ref: '#/channels/deviceStateUpdates'
     messages:
@@ -24,14 +24,14 @@ components:
   messages:
     DeviceStateUpdated:
       name: DeviceStateUpdated
-      summary: Обновление состояния устройства (`DeviceState`), опубликованное в Kafka.
+      summary: A device state update (`DeviceState`) published to Kafka.
       contentType: application/json
       bindings:
         kafka:
           key:
             type: integer
             format: int64
-            description: Ключ партиционирования — device_id
+            description: Partition key — device_id
       payload:
         $ref: '#/components/schemas/DeviceStatePayload'
       examples:
@@ -53,17 +53,17 @@ components:
         device_id:
           type: integer
           format: int64
-          description: Идентификатор устройства
+          description: Device identifier
           example: 42
         timestamp:
           type: string
           format: date-time
-          description: Момент фиксации состояния
+          description: Time the state was captured
           example: '2026-05-31T12:00:03Z'
         state_payload:
           type: object
           additionalProperties: true
-          description: Полезная нагрузка состояния (`DeviceState.state_payload`)
+          description: State payload (`DeviceState.state_payload`)
           example:
             temperature_celsius: 18.4
             mode: heating
