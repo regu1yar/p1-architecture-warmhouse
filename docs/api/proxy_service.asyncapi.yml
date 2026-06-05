@@ -1,0 +1,83 @@
+asyncapi: '3.0.0'
+info:
+  title: Proxy Service Heartbeat API
+  version: '1.0.0'
+servers:
+  proxy:
+    host: proxy-service.warmhouse
+    protocol: http
+    pathname: /v1/heartbeat
+channels:
+  heartbeat:
+    address: /v1/heartbeat
+    messages:
+      heartbeat:
+        $ref: '#/components/messages/Heartbeat'
+operations:
+  receiveHeartbeat:
+    action: receive
+    summary: Proxy Service receives a heartbeat from a Connections Service instance.
+    channel:
+      $ref: '#/channels/heartbeat'
+    messages:
+      - $ref: '#/channels/heartbeat/messages/heartbeat'
+components:
+  messages:
+    Heartbeat:
+      name: Heartbeat
+      summary: An "instance alive" signal with current load metrics.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/HeartbeatPayload'
+      examples:
+        - name: healthy
+          payload:
+            instance_id: connections-service-7d9f-abc
+            status: healthy
+            active_connections: 1840
+            max_connections: 5000
+            load_factor: 0.37
+            sent_at: '2026-05-31T12:00:00Z'
+  schemas:
+    HeartbeatPayload:
+      type: object
+      required:
+        - instance_id
+        - status
+        - active_connections
+        - sent_at
+      properties:
+        instance_id:
+          type: string
+          description: Connections Service instance identifier
+          example: connections-service-7d9f-abc
+        status:
+          type: string
+          description: Instance self-reported health
+          enum:
+            - healthy
+            - degraded
+            - draining
+          example: healthy
+        active_connections:
+          type: integer
+          minimum: 0
+          description: Number of active device connections on the instance
+          example: 1840
+        max_connections:
+          type: integer
+          minimum: 0
+          description: Maximum connection capacity of the instance
+          example: 5000
+        load_factor:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Normalized load (0 — idle, 1 — at capacity)
+          example: 0.37
+        sent_at:
+          type: string
+          format: date-time
+          description: Time the heartbeat was generated
+          example: '2026-05-31T12:00:00Z'

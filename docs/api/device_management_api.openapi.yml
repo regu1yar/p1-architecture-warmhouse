@@ -1,0 +1,265 @@
+openapi: '3.0.3'
+info:
+  title: Device Management API
+  version: '1.0.0'
+servers:
+  - url: https://device-management.warmhouse/api/v1
+tags:
+  - name: Devices
+    description: Registering and removing devices
+paths:
+  /devices:
+    post:
+      operationId: registerDevice
+      summary: Register a new device
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeviceRequest'
+            examples:
+              thermostat:
+                summary: Registering a living room thermostat
+                value:
+                  device_type_id: 7
+                  location_id: 12
+                  serial_number: TH-2026-000123
+                  name: Living room thermostat
+                  metadata:
+                    firmware: 2.4.1
+                    vendor: warmhouse
+      responses:
+        '201':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              examples:
+                created:
+                  value:
+                    id: 42
+                    device_type_id: 7
+                    location_id: 12
+                    serial_number: TH-2026-000123
+                    name: Living room thermostat
+                    status: online
+                    metadata:
+                      firmware: 2.4.1
+                      vendor: warmhouse
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validation:
+                  value:
+                    code: validation_error
+                    message: Field serial_number is required
+        '401':
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '403':
+          description: User does not own the specified location
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  value:
+                    code: forbidden
+                    message: User does not own location 12
+        '409':
+          description: A device with this serial number is already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                conflict:
+                  value:
+                    code: serial_number_conflict
+                    message: Device with serial number TH-2026-000123 already exists
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while registering device
+  /devices/{deviceId}:
+    delete:
+      operationId: deleteDevice
+      summary: Delete a device
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Unique device identifier (`Device.id`)
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      responses:
+        '204':
+          description: Device deleted
+        '401':
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '403':
+          description: User does not own the device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                forbidden:
+                  value:
+                    code: forbidden
+                    message: User does not own device 42
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    code: device_not_found
+                    message: Device 42 does not exist
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while deleting device
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by the Authorization API
+  schemas:
+    RegisterDeviceRequest:
+      type: object
+      required:
+        - device_type_id
+        - serial_number
+        - name
+      properties:
+        device_type_id:
+          type: integer
+          format: int64
+          description: Device type (`DeviceType.id`)
+          example: 7
+        location_id:
+          type: integer
+          format: int64
+          description: Location the device is attached to (`Location.id`)
+          example: 12
+        serial_number:
+          type: string
+          maxLength: 100
+          description: Device serial number, unique across the system
+          example: TH-2026-000123
+        name:
+          type: string
+          maxLength: 100
+          description: Device display name
+          example: Living room thermostat
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Arbitrary device metadata (`Device.metadata`)
+          example:
+            firmware: 2.4.1
+            vendor: warmhouse
+    Device:
+      type: object
+      required:
+        - id
+        - device_type_id
+        - serial_number
+        - name
+        - status
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        device_type_id:
+          type: integer
+          format: int64
+          example: 7
+        location_id:
+          type: integer
+          format: int64
+          example: 12
+        serial_number:
+          type: string
+          example: TH-2026-000123
+        name:
+          type: string
+          example: Living room thermostat
+        status:
+          type: string
+          description: Device status in the system
+          enum:
+            - online
+            - offline
+          example: online
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            firmware: 2.4.1
+            vendor: warmhouse
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: device_not_found
+        message:
+          type: string
+          description: Human-readable error description
+          example: Device 42 does not exist

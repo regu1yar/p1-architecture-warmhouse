@@ -1,0 +1,28 @@
+@startuml "Context"
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+' !include ../common/C4_Context.puml
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+Person(user, "User", "Warmhouse user")
+
+System_Ext(sensor, "Sensor", "Temperature sensor")
+System_Ext(temperature_api, "Temperature API", "Temperature API")
+
+Enterprise_Boundary(warmhouse_boundary, "Warmhouse") {
+    Person(warmhouse_specialist, "Specialist", "Technical specialist")
+    System(warmhouse_backend, "Backend", "Warmhouse backend")
+}
+
+Rel(user, warmhouse_backend, "Gets current temperature from")
+Rel(user, warmhouse_backend, "Sets target temperature using")
+
+Rel(warmhouse_specialist, sensor, "Sets up")
+Rel(warmhouse_specialist, warmhouse_backend, "Registers sensors via")
+
+Rel(warmhouse_backend, temperature_api, "Calls")
+
+Rel(temperature_api, sensor, "Reads temperature from")
+
+@enduml

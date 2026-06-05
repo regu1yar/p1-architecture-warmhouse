@@ -1,0 +1,173 @@
+openapi: '3.0.3'
+info:
+  title: Device Control API
+  version: '1.0.0'
+servers:
+  - url: https://device-control.warmhouse/api/v1
+tags:
+  - name: Commands
+    description: Sending commands to devices
+paths:
+  /devices/{deviceId}/commands:
+    post:
+      operationId: sendDeviceCommand
+      summary: Send a command to a device
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Unique device identifier (`Device.id`)
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+            examples:
+              setTemperature:
+                summary: Set the target temperature on a thermostat
+                value:
+                  type: set_temperature
+                  parameters:
+                    target_celsius: 22.5
+              turnOff:
+                summary: Turn the device off
+                value:
+                  type: set_power
+                  parameters:
+                    state: 'off'
+      responses:
+        '200':
+          description: Command delivered to the device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandSent'
+              examples:
+                success:
+                  value:
+                    status: OK
+        '400':
+          description: Invalid command (failed validation against commands_schema)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidParameter:
+                  value:
+                    code: invalid_command
+                    message: 'Parameter target_celsius is out of allowed range [5, 35]'
+        '401':
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unauthorized:
+                  value:
+                    code: unauthorized
+                    message: Missing or invalid authentication token
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    code: device_not_found
+                    message: Device 42 does not exist
+        '409':
+          description: Device is offline and cannot accept the command
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                offline:
+                  value:
+                    code: device_offline
+                    message: Device 42 has no active connection
+        '500':
+          description: Internal service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                internal:
+                  value:
+                    code: internal_error
+                    message: Unexpected error while dispatching command
+        '503':
+          description: Downstream service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unavailable:
+                  value:
+                    code: dispatch_unavailable
+                    message: Connections Service is temporarily unavailable
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by the Authorization API
+  schemas:
+    CommandRequest:
+      type: object
+      required:
+        - type
+        - parameters
+      properties:
+        type:
+          type: string
+          description: >
+            Command identifier defined in `DeviceType.commands_schema`
+            for the target device type.
+          example: set_temperature
+        parameters:
+          type: object
+          additionalProperties: true
+          description: >
+            Command parameters. The structure is defined by the device type's
+            `commands_schema` and validated by the Command Validator.
+          example:
+            target_celsius: 22.5
+    CommandSent:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
+          example: OK
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code
+          example: device_not_found
+        message:
+          type: string
+          description: Human-readable error description
+          example: Device 42 does not exist

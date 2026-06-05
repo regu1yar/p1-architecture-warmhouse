@@ -1,0 +1,110 @@
+asyncapi: '3.0.0'
+info:
+  title: Realtime Service API
+  version: '1.0.0'
+servers:
+  realtime-sse:
+    host: realtime.warmhouse
+    protocol: sse
+    pathname: /v1/stream
+channels:
+  subscriptions:
+    address: /v1/stream
+    messages:
+      subscriptionRequest:
+        $ref: '#/components/messages/SubscriptionRequest'
+  deviceStateStream:
+    address: /v1/stream
+    messages:
+      deviceStateUpdate:
+        $ref: '#/components/messages/DeviceStateUpdate'
+operations:
+  manageSubscription:
+    action: receive
+    summary: The SPA sends the list of devices to subscribe to.
+    channel:
+      $ref: '#/channels/subscriptions'
+    messages:
+      - $ref: '#/channels/subscriptions/messages/subscriptionRequest'
+  streamDeviceState:
+    action: send
+    summary: Realtime Service streams a device state update to the client.
+    channel:
+      $ref: '#/channels/deviceStateStream'
+    messages:
+      - $ref: '#/channels/deviceStateStream/messages/deviceStateUpdate'
+components:
+  messages:
+    SubscriptionRequest:
+      name: SubscriptionRequest
+      summary: List of devices to subscribe to.
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SubscriptionRequestPayload'
+      examples:
+        - name: subscribe
+          payload:
+            action: subscribe
+            device_ids: [42, 57]
+    DeviceStateUpdate:
+      name: DeviceStateUpdate
+      summary: A single device state record (`DeviceState`).
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DeviceStatePayload'
+      examples:
+        - name: thermostatUpdate
+          payload:
+            device_id: 42
+            timestamp: '2026-05-31T12:00:03Z'
+            state_payload:
+              temperature_celsius: 21.8
+              target_celsius: 22.5
+              mode: heating
+  schemas:
+    SubscriptionRequestPayload:
+      type: object
+      required:
+        - action
+        - device_ids
+      properties:
+        action:
+          type: string
+          description: Subscription operation type
+          enum:
+            - subscribe
+            - unsubscribe
+          example: subscribe
+        device_ids:
+          type: array
+          description: Device identifiers (`Device.id`)
+          minItems: 1
+          items:
+            type: integer
+            format: int64
+          example: [42, 57]
+    DeviceStatePayload:
+      type: object
+      required:
+        - device_id
+        - timestamp
+        - state_payload
+      properties:
+        device_id:
+          type: integer
+          format: int64
+          description: Device identifier
+          example: 42
+        timestamp:
+          type: string
+          format: date-time
+          description: Time the state was captured
+          example: '2026-05-31T12:00:03Z'
+        state_payload:
+          type: object
+          additionalProperties: true
+          description: State payload (`DeviceState.state_payload`)
+          example:
+            temperature_celsius: 21.8
+            target_celsius: 22.5
+            mode: heating

@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+' !include ../common/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component diagram for Warmhouse system - Connections Service
+
+Container(proxy_service, "Proxy Service", "Service for balancing device connections")
+ContainerQueue(message_broker, "Message Broker", "Apache Kafka", "Distributed message broker for device state updates")
+Container(device_control_api, "Device Control API", "Provides API for controlling devices")
+
+Container_Boundary(connections_service, "Connections Service") {
+    Component(connection_acceptor, "Connection Acceptor", "Go WebSocket Handler", "Accepts new device connections and registers them in registry")
+    Component(state_update_receiver, "State Update Receiver", "Go Library, Kafka Producer", "Handles incoming messages from devices and publishes state updates to message broker")
+    Component(command_dispatcher, "Command Dispatcher", "Go REST Handler", "Dispatches commands to devices via proxy")
+    Component(connection_registry, "Connection Registry", "In-memory Database", "Tracks device-connection mapping and session state")
+    Component(heartbeat_service, "Heartbeat Service", "Go Service", "Sends regular heartbeats to proxy service to maintain connection health")
+
+    Rel(connection_acceptor, connection_registry, "Registers new connections in", "Internal API")
+    Rel_Neighbor(connection_acceptor, state_update_receiver, "Passes connection ownership to", "Internal API")
+    Rel(state_update_receiver, connection_registry, "Removes connection when it dies", "Internal API")
+    Rel(command_dispatcher, connection_registry, "Queries device connection from", "Internal API")
+    BiRel(state_update_receiver, message_broker, "Publishes device state updates to", "async, Kafka protocol")
+    Rel(command_dispatcher, proxy_service, "Sends directives via", "WebSocket")
+    Rel(heartbeat_service, proxy_service, "Sends heartbeats to", "HTTP / WebSocket")
+}
+
+Rel(proxy_service, connection_acceptor, "Forwards new connections to", "WebSocket")
+Rel(proxy_service, state_update_receiver, "Forwards device messages to", "WebSocket")
+Rel(device_control_api, command_dispatcher, "Sends device commands to", "JSON/HTTPS")
+
+@enduml
